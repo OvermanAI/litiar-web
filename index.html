@@ -17,12 +17,21 @@
       transition:opacity 0.6s ease;
     }
     #hint.hidden { opacity:0; }
+    #drag-hint {
+      position:fixed; top:60px; left:50%; transform:translateX(-50%);
+      background:rgba(255,200,0,0.85); color:#000;
+      padding:8px 18px; border-radius:999px; font-size:13px; font-weight:600;
+      z-index:9999; pointer-events:none;
+      opacity:0; transition:opacity 0.4s ease;
+    }
+    #drag-hint.show { opacity:1; }
     .dot { width:8px; height:8px; border-radius:50%; background:#fff; animation:p 1.4s ease-in-out infinite; }
     @keyframes p { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
   </style>
 </head>
 <body>
   <div id="hint"><div class="dot"></div>將相機對準 LitiBook 繪本頁面</div>
+  <div id="drag-hint">✋ 拖曳 YU</div>
 
   <a-scene
     mindar-image="imageTargetSrc:./litibook.mind;autoStart:true;uiLoading:yes;uiScanning:yes;uiError:yes;filterMinCF:0.001;filterBeta:10;"
@@ -30,10 +39,10 @@
     vr-mode-ui="enabled:false" device-orientation-permission-ui="enabled:false">
 
     <a-assets>
-      <img id="yu-img"      src="./yu.png"               crossorigin="anonymous" />
-      <img id="text-tr"     src="./text_top_right.png"   crossorigin="anonymous" />
-      <img id="text-bl"     src="./text_bottom_left.png" crossorigin="anonymous" />
-      <img id="text-br"     src="./text_bottom_right.png"crossorigin="anonymous" />
+      <img id="yu-img"   src="./yu.png"                crossorigin="anonymous" />
+      <img id="text-tr"  src="./text_top_right.png"    crossorigin="anonymous" />
+      <img id="text-bl"  src="./text_bottom_left.png"  crossorigin="anonymous" />
+      <img id="text-br"  src="./text_bottom_right.png" crossorigin="anonymous" />
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled:false" fov="80"></a-camera>
@@ -41,63 +50,51 @@
     <a-entity id="book-anchor" mindar-image-target="targetIndex:0">
 
       <!-- ==============================
-           🧒 YU 角色浮起
+           🧒 YU 角色 — 可拖曳
+           drag-yu component 處理觸控邏輯
       ============================== -->
-      <a-image src="#yu-img" width="0.22" height="0.38"
+      <a-image id="yu-char" src="#yu-img"
+        width="0.22" height="0.38"
         position="0.03 -0.04 0.025"
         material="transparent:true;alphaTest:0.1;side:double"
         animation__float="property:position;from:0.03 -0.04 0.025;to:0.03 -0.01 0.025;dur:2200;easing:easeInOutSine;loop:true;dir:alternate"
-        animation__breathe="property:scale;from:1 1 1;to:1.03 1.03 1.03;dur:3000;easing:easeInOutSine;loop:true;dir:alternate">
+        animation__breathe="property:scale;from:1 1 1;to:1.03 1.03 1.03;dur:3000;easing:easeInOutSine;loop:true;dir:alternate"
+        drag-yu>
       </a-image>
 
-      <!-- YU 腳下魔法陣 -->
-      <a-torus position="0.03 -0.22 0.008" radius="0.065" radius-tubular="0.004"
-        color="#FFD700" emissive="#FFD700" emissive-intensity="0.95" metalness="0" roughness="1" opacity="0.85"
-        animation="property:rotation;from:0 0 0;to:0 0 360;dur:5000;loop:true;easing:linear"></a-torus>
-      <a-torus position="0.03 -0.22 0.008" radius="0.044" radius-tubular="0.003"
-        color="#FFA500" emissive="#FFA500" emissive-intensity="0.9" metalness="0" roughness="1" opacity="0.75"
-        animation="property:rotation;from:0 0 360;to:0 0 0;dur:3500;loop:true;easing:linear"></a-torus>
-      <a-circle position="0.03 -0.22 0.003" radius="0.068" rotation="-90 0 0"
-        color="#FFD700" emissive="#FFD700" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.18"
-        material="transparent:true;side:double"
-        animation="property:scale;from:0.88 0.88 0.88;to:1.12 1.12 1.12;dur:2500;easing:easeInOutSine;loop:true;dir:alternate">
-      </a-circle>
+      <!-- YU 腳下魔法陣 (id="yu-ring" 方便跟著 YU 移動) -->
+      <a-entity id="yu-ring" position="0.03 -0.22 0.008">
+        <a-torus radius="0.065" radius-tubular="0.004"
+          color="#FFD700" emissive="#FFD700" emissive-intensity="0.95" metalness="0" roughness="1" opacity="0.85"
+          animation="property:rotation;from:0 0 0;to:0 0 360;dur:5000;loop:true;easing:linear"></a-torus>
+        <a-torus radius="0.044" radius-tubular="0.003"
+          color="#FFA500" emissive="#FFA500" emissive-intensity="0.9" metalness="0" roughness="1" opacity="0.75"
+          animation="property:rotation;from:0 0 360;to:0 0 0;dur:3500;loop:true;easing:linear"></a-torus>
+        <a-circle radius="0.068" rotation="-90 0 0"
+          color="#FFD700" emissive="#FFD700" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.18"
+          material="transparent:true;side:double"
+          animation="property:scale;from:0.88 0.88 0.88;to:1.12 1.12 1.12;dur:2500;easing:easeInOutSine;loop:true;dir:alternate">
+        </a-circle>
+      </a-entity>
 
-      <!-- ==============================
-           📜 文字面板 — 各自獨立浮動節奏
-           位置根據書頁像素換算到 AR 座標：
-           AR_X = (px_centerX/1329) - 0.5
-           AR_Y = (0.5 - px_centerY/1183) * 0.890
-      ============================== -->
-
-      <!-- 右上：When the stars whisper...
-           像素中心 (1065, 295) → AR (0.30, 0.22) -->
-      <a-image src="#text-tr" width="0.37" height="0.20"
-        position="0.30 0.22 0.038"
+      <!-- 📜 文字面板 -->
+      <a-image src="#text-tr" width="0.37" height="0.20" position="0.30 0.22 0.038"
         material="transparent:true;alphaTest:0.08;side:double"
         animation__float="property:position;from:0.30 0.22 0.038;to:0.30 0.245 0.038;dur:2800;easing:easeInOutSine;loop:true;dir:alternate"
         animation__sway="property:rotation;from:0 0 -1.5;to:0 0 1.5;dur:4500;easing:easeInOutSine;loop:true;dir:alternate">
       </a-image>
-
-      <!-- 左下：Chapter 1 / The Town of Floating Stars
-           像素中心 (177, 805) → AR (-0.37, -0.16) -->
-      <a-image src="#text-bl" width="0.24" height="0.22"
-        position="-0.37 -0.16 0.038"
+      <a-image src="#text-bl" width="0.24" height="0.22" position="-0.37 -0.16 0.038"
         material="transparent:true;alphaTest:0.08;side:double"
         animation__float="property:position;from:-0.37 -0.16 0.038;to:-0.37 -0.135 0.038;dur:3200;easing:easeInOutSine;loop:true;dir:alternate"
         animation__sway="property:rotation;from:0 0 1.2;to:0 0 -1.2;dur:5000;easing:easeInOutSine;loop:true;dir:alternate">
       </a-image>
-
-      <!-- 右下：One tiny step leads to a big dream...
-           像素中心 (1070, 1020) → AR (0.30, -0.32) -->
-      <a-image src="#text-br" width="0.36" height="0.21"
-        position="0.30 -0.32 0.038"
+      <a-image src="#text-br" width="0.36" height="0.21" position="0.30 -0.32 0.038"
         material="transparent:true;alphaTest:0.08;side:double"
         animation__float="property:position;from:0.30 -0.32 0.038;to:0.30 -0.295 0.038;dur:3600;easing:easeInOutSine;loop:true;dir:alternate"
         animation__sway="property:rotation;from:0 0 -1.0;to:0 0 1.0;dur:5500;easing:easeInOutSine;loop:true;dir:alternate">
       </a-image>
 
-      <!-- ⭐ 星星 14 顆 -->
+      <!-- ⭐ 星星 -->
       <a-sphere position="-0.35 0.35 0.06" radius="0.020" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.35 0.35 0.06;to:-0.35 0.375 0.06;dur:1600;easing:easeInOutSine;loop:true;dir:alternate"></a-sphere>
       <a-sphere position="-0.18 0.40 0.08" radius="0.016" color="#FFF4A0" emissive="#FFF4A0" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.18 0.40 0.08;to:-0.18 0.425 0.08;dur:2100;easing:easeInOutSine;loop:true;dir:alternate"></a-sphere>
       <a-sphere position="-0.42 0.22 0.05" radius="0.014" color="#FFD700" emissive="#FFD700" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.42 0.22 0.05;to:-0.42 0.245 0.05;dur:1900;easing:easeInOutSine;loop:true;dir:alternate"></a-sphere>
@@ -138,7 +135,6 @@
         <a-sphere position="0.024 0.008 0"  radius="0.020" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.35" metalness="0" roughness="1" opacity="0.42"></a-sphere>
       </a-entity>
 
-      <!-- ✨ 粒子 -->
       <a-entity id="sparkles-container"></a-entity>
       <a-entity id="yu-particles"></a-entity>
 
@@ -146,19 +142,148 @@
   </a-scene>
 
   <script>
+    // ============================================================
+    // drag-yu component：讓 YU 可以被手指拖曳
+    // ============================================================
+    AFRAME.registerComponent('drag-yu', {
+      init: function () {
+        const yuEl   = this.el;
+        const ringEl = document.getElementById('yu-ring');
+        const scene  = document.querySelector('a-scene');
+        const dragHint = document.getElementById('drag-hint');
+
+        let dragging   = false;
+        let startTouchX, startTouchY;
+        let startPosX,  startPosY, startPosZ;
+        let ringOffsetX, ringOffsetY;
+
+        // 每像素對應多少 AR 單位（根據 FOV 與典型觀看距離估算）
+        // 書本寬 ~1 AR 單位，手機螢幕寬 ~390px，書通常佔螢幕 60-80%
+        const SENSITIVITY = 0.004;
+        // 點擊偵測半徑（螢幕像素）
+        const HIT_RADIUS  = 110;
+
+        // ── 取得 YU 在螢幕上的位置 ──────────────────────────
+        const getScreenPos = () => {
+          const camera = scene.camera;
+          const worldPos = new THREE.Vector3();
+          yuEl.object3D.getWorldPosition(worldPos);
+          worldPos.project(camera);
+          const canvas = scene.canvas;
+          return {
+            x: (worldPos.x + 1) / 2 * canvas.clientWidth,
+            y: (-worldPos.y + 1) / 2 * canvas.clientHeight
+          };
+        };
+
+        // ── 停止浮動動畫 ────────────────────────────────────
+        const pauseFloat = () => {
+          yuEl.removeAttribute('animation__float');
+          yuEl.removeAttribute('animation__breathe');
+          // 放大一點給使用者「抓住了」的回饋
+          yuEl.setAttribute('animation__grab', {
+            property: 'scale', from: '1 1 1', to: '1.08 1.08 1.08',
+            dur: 200, easing: 'easeOutQuad'
+          });
+        };
+
+        // ── 恢復浮動動畫（以目前位置為基準）──────────────────
+        const resumeFloat = () => {
+          yuEl.removeAttribute('animation__grab');
+          const p = yuEl.getAttribute('position');
+          yuEl.setAttribute('animation__float', {
+            property: 'position',
+            from: `${p.x} ${p.y} ${p.z}`,
+            to:   `${p.x} ${p.y + 0.03} ${p.z}`,
+            dur: 2200, easing: 'easeInOutSine', loop: true, dir: 'alternate'
+          });
+          yuEl.setAttribute('animation__breathe', {
+            property: 'scale',
+            from: '1 1 1', to: '1.03 1.03 1.03',
+            dur: 3000, easing: 'easeInOutSine', loop: true, dir: 'alternate'
+          });
+        };
+
+        // ── touchstart ──────────────────────────────────────
+        scene.canvas.addEventListener('touchstart', (e) => {
+          const touch = e.touches[0];
+          const sp = getScreenPos();
+          const dist = Math.hypot(touch.clientX - sp.x, touch.clientY - sp.y);
+
+          if (dist > HIT_RADIUS) return; // 沒點到 YU
+
+          dragging    = true;
+          startTouchX = touch.clientX;
+          startTouchY = touch.clientY;
+
+          const yuPos   = yuEl.getAttribute('position');
+          startPosX = yuPos.x;
+          startPosY = yuPos.y;
+          startPosZ = yuPos.z;
+
+          // 記錄魔法陣和 YU 的位移差
+          const ringPos = ringEl.getAttribute('position');
+          ringOffsetX = ringPos.x - yuPos.x;
+          ringOffsetY = ringPos.y - yuPos.y;
+
+          pauseFloat();
+          dragHint.classList.add('show');
+          e.preventDefault();
+        }, { passive: false });
+
+        // ── touchmove ───────────────────────────────────────
+        scene.canvas.addEventListener('touchmove', (e) => {
+          if (!dragging) return;
+          const touch = e.touches[0];
+
+          const dx = (touch.clientX - startTouchX) * SENSITIVITY;
+          const dy = -(touch.clientY - startTouchY) * SENSITIVITY; // Y 軸反向
+
+          const newX = startPosX + dx;
+          const newY = startPosY + dy;
+
+          // 移動 YU
+          yuEl.setAttribute('position', { x: newX, y: newY, z: startPosZ });
+
+          // 魔法陣跟著 YU 移動
+          ringEl.setAttribute('position', {
+            x: newX + ringOffsetX,
+            y: newY + ringOffsetY,
+            z: ringEl.getAttribute('position').z
+          });
+
+          e.preventDefault();
+        }, { passive: false });
+
+        // ── touchend ────────────────────────────────────────
+        const onTouchEnd = () => {
+          if (!dragging) return;
+          dragging = false;
+          dragHint.classList.remove('show');
+          resumeFloat();
+        };
+        scene.canvas.addEventListener('touchend',    onTouchEnd);
+        scene.canvas.addEventListener('touchcancel', onTouchEnd);
+
+        // 偵測到書本時顯示拖曳提示 3 秒
+        document.getElementById('book-anchor').addEventListener('targetFound', () => {
+          dragHint.classList.add('show');
+          setTimeout(() => dragHint.classList.remove('show'), 3000);
+        });
+      }
+    });
+
+    // ── 粒子生成 ─────────────────────────────────────────────
     AFRAME.registerComponent('spawn-effects', {
       init: function () {
-        // YU 上升光粒
         const yuP = document.getElementById('yu-particles');
         for (let i = 0; i < 14; i++) {
           const el    = document.createElement('a-sphere');
           const angle = (i / 14) * Math.PI * 2;
           const rx    = Math.cos(angle) * (0.050 + Math.random() * 0.025);
           const rz    = Math.sin(angle) * (0.050 + Math.random() * 0.025) * 0.4;
-          const fromY = -0.22;
-          const toY   = fromY + 0.18 + Math.random() * 0.18;
-          const dur   = 1100 + i * 160;
-          const delay = i * 90;
+          const fromY = -0.22, toY = fromY + 0.18 + Math.random() * 0.18;
+          const dur   = 1100 + i * 160, delay = i * 90;
           el.setAttribute('position', `${(0.03+rx).toFixed(3)} ${fromY} ${(0.012+rz).toFixed(3)}`);
           el.setAttribute('radius', (0.005 + Math.random() * 0.005).toFixed(4));
           el.setAttribute('color', '#FFD700'); el.setAttribute('emissive', '#FFD700');
@@ -167,19 +292,13 @@
           el.setAttribute('animation__fade', `property:scale;from:1 1 1;to:0.05 0.05 0.05;dur:${dur};delay:${delay};easing:easeInQuad;loop:true`);
           yuP.appendChild(el);
         }
-        // 散景光點
         const sc = document.getElementById('sparkles-container');
         const colors = ['#FFE566','#FFFFFF','#B8E0FF','#FFD6FF','#C0FFE8'];
         for (let i = 0; i < 14; i++) {
           const el    = document.createElement('a-sphere');
-          const x     = (Math.random()-0.5)*0.86;
-          const y     = (Math.random()-0.5)*0.76;
-          const z     = 0.03 + Math.random()*0.06;
-          const r     = 0.006 + Math.random()*0.007;
-          const dur   = 900 + Math.random()*1400;
-          const delay = Math.random()*3500;
-          const color = colors[Math.floor(Math.random()*colors.length)];
-          const fs    = (0.2+Math.random()*0.4).toFixed(2);
+          const x = (Math.random()-0.5)*0.86, y = (Math.random()-0.5)*0.76, z = 0.03+Math.random()*0.06;
+          const r = 0.006+Math.random()*0.007, dur = 900+Math.random()*1400, delay = Math.random()*3500;
+          const color = colors[Math.floor(Math.random()*colors.length)], fs = (0.2+Math.random()*0.4).toFixed(2);
           el.setAttribute('position', `${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
           el.setAttribute('radius', r.toFixed(4));
           el.setAttribute('color', color); el.setAttribute('emissive', color);
@@ -189,6 +308,7 @@
         }
       }
     });
+
     document.querySelector('a-scene').setAttribute('spawn-effects', '');
     const hint = document.getElementById('hint');
     const anchor = document.getElementById('book-anchor');
