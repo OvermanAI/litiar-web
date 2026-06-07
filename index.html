@@ -384,8 +384,60 @@
             dur, easing:'easeInOutSine', loop:true, dir:'alternate'
           });
         });
+
+        // ── 讀取 Setup 頁面圈選的自訂元素 ──────────────────
+        const savedElements = localStorage.getItem('litiar_elements');
+        if (savedElements) {
+          try {
+            const customEls = JSON.parse(savedElements);
+            const anchor = document.getElementById('book-anchor');
+            const durations = [2000, 2400, 2800, 3200, 2600];
+
+            customEls.forEach((el, i) => {
+              // 建立 blob URL（a-image 無法直接接受 data URL，需要繞過）
+              const blob = dataURLtoBlob(el.dataURL);
+              const url  = URL.createObjectURL(blob);
+
+              const wrapper = document.createElement('a-entity');
+              wrapper.classList.add('draggable');
+              wrapper.dataset.floatAmp = '0.028';
+              wrapper.dataset.floatDur = durations[i % durations.length];
+              wrapper.setAttribute('position', `${el.arX.toFixed(3)} ${el.arY.toFixed(3)} 0.04`);
+
+              const img = document.createElement('a-image');
+              img.setAttribute('src', url);
+              img.setAttribute('width',  el.arW.toFixed(3));
+              img.setAttribute('height', el.arH.toFixed(3));
+              img.setAttribute('material', 'transparent:true;alphaTest:0.15;side:double');
+
+              wrapper.appendChild(img);
+              anchor.appendChild(wrapper);
+
+              // 啟動浮動動畫
+              const dur = durations[i % durations.length];
+              wrapper.setAttribute('animation__float', {
+                property:'position',
+                from:`${el.arX.toFixed(3)} ${el.arY.toFixed(3)} 0.04`,
+                to:`${el.arX.toFixed(3)} ${(el.arY + 0.028).toFixed(3)} 0.04`,
+                dur, easing:'easeInOutSine', loop:true, dir:'alternate'
+              });
+            });
+
+            console.log(`✅ 載入 ${customEls.length} 個自訂浮動元素`);
+          } catch(e) { console.warn('讀取自訂元素失敗', e); }
+        }
       }
     });
+
+    // base64 dataURL → Blob
+    function dataURLtoBlob(dataURL) {
+      const [header, data] = dataURL.split(',');
+      const mime = header.match(/:(.*?);/)[1];
+      const binary = atob(data);
+      const arr = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+      return new Blob([arr], { type: mime });
+    }
 
     document.querySelector('a-scene').setAttribute('spawn-effects','');
 
@@ -479,5 +531,6 @@
   </script>
 </body>
 </html>
+
 
 
