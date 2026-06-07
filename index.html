@@ -68,7 +68,7 @@
                 data-float-amp="0.030" data-float-dur="2200"
                 position="0.03 -0.04 0.025">
         <a-image src="#yu-img" width="0.22" height="0.38"
-          material="transparent:true;alphaTest:0.1;side:double"
+          material="transparent:true;alphaTest:0.18;side:double"
           animation__breathe="property:scale;from:1 1 1;to:1.03 1.03 1.03;dur:3000;easing:easeInOutSine;loop:true;dir:alternate">
         </a-image>
         <!-- 魔法陣：作為 YU 的子元素，拖曳時自動跟著移動 -->
@@ -92,7 +92,7 @@
                 data-float-amp="0.025" data-float-dur="2800"
                 position="0.30 0.22 0.038">
         <a-image src="#text-tr" width="0.37" height="0.20"
-          material="transparent:true;alphaTest:0.08;side:double"
+          material="transparent:true;alphaTest:0.18;side:double"
           animation__sway="property:rotation;from:0 0 -1.5;to:0 0 1.5;dur:4500;easing:easeInOutSine;loop:true;dir:alternate">
         </a-image>
       </a-entity>
@@ -102,7 +102,7 @@
                 data-float-amp="0.025" data-float-dur="3200"
                 position="-0.37 -0.16 0.038">
         <a-image src="#text-bl" width="0.24" height="0.22"
-          material="transparent:true;alphaTest:0.08;side:double"
+          material="transparent:true;alphaTest:0.18;side:double"
           animation__sway="property:rotation;from:0 0 1.2;to:0 0 -1.2;dur:5000;easing:easeInOutSine;loop:true;dir:alternate">
         </a-image>
       </a-entity>
@@ -112,7 +112,7 @@
                 data-float-amp="0.025" data-float-dur="3600"
                 position="0.30 -0.32 0.038">
         <a-image src="#text-br" width="0.36" height="0.21"
-          material="transparent:true;alphaTest:0.08;side:double"
+          material="transparent:true;alphaTest:0.18;side:double"
           animation__sway="property:rotation;from:0 0 -1.0;to:0 0 1.0;dur:5500;easing:easeInOutSine;loop:true;dir:alternate">
         </a-image>
       </a-entity>
@@ -140,7 +140,7 @@
         <a-sphere radius="0.050" color="#FFF8DC" emissive="#FFF8DC" emissive-intensity="0.85" metalness="0" roughness="1">
           <a-sphere radius="1.45" color="#FFFACD" emissive="#FFFACD" emissive-intensity="0.15" metalness="0" roughness="1" opacity="0.22" material="transparent:true;side:back"></a-sphere>
         </a-sphere>
-        <a-sphere position="-0.018 0.006 0.022" radius="0.044" color="#1a1f3a" metalness="0" roughness="1" opacity="0.97"></a-sphere>
+        <!-- 新月暗面移除：難以精準定位，純發光球效果更乾淨 -->
       </a-entity>
 
       <!-- ☁️ 雲朵 -->
@@ -321,3 +321,4 @@
   </script>
 </body>
 </html>
+
