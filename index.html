@@ -30,7 +30,10 @@
     vr-mode-ui="enabled:false" device-orientation-permission-ui="enabled:false">
 
     <a-assets>
-      <img id="yu-img" src="./yu.png" crossorigin="anonymous" />
+      <img id="yu-img"      src="./yu.png"               crossorigin="anonymous" />
+      <img id="text-tr"     src="./text_top_right.png"   crossorigin="anonymous" />
+      <img id="text-bl"     src="./text_bottom_left.png" crossorigin="anonymous" />
+      <img id="text-br"     src="./text_bottom_right.png"crossorigin="anonymous" />
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled:false" fov="80"></a-camera>
@@ -38,43 +41,61 @@
     <a-entity id="book-anchor" mindar-image-target="targetIndex:0">
 
       <!-- ==============================
-           🧒 YU 角色：從書頁浮起
-           透明 PNG 疊在原本書頁的 YU 上方
-           帶輕微浮動 + 呼吸縮放動畫
+           🧒 YU 角色浮起
       ============================== -->
-      <a-image
-        id="yu-char"
-        src="#yu-img"
-        width="0.22" height="0.38"
+      <a-image src="#yu-img" width="0.22" height="0.38"
         position="0.03 -0.04 0.025"
         material="transparent:true;alphaTest:0.1;side:double"
-        animation__float="property:position;
-          from:0.03 -0.04 0.025;
-          to:0.03 -0.01 0.025;
-          dur:2200;easing:easeInOutSine;loop:true;dir:alternate"
-        animation__breathe="property:scale;
-          from:1 1 1;
-          to:1.03 1.03 1.03;
-          dur:3000;easing:easeInOutSine;loop:true;dir:alternate">
+        animation__float="property:position;from:0.03 -0.04 0.025;to:0.03 -0.01 0.025;dur:2200;easing:easeInOutSine;loop:true;dir:alternate"
+        animation__breathe="property:scale;from:1 1 1;to:1.03 1.03 1.03;dur:3000;easing:easeInOutSine;loop:true;dir:alternate">
       </a-image>
 
       <!-- YU 腳下魔法陣 -->
-      <a-torus position="0.03 -0.22 0.008"
-        radius="0.065" radius-tubular="0.004"
+      <a-torus position="0.03 -0.22 0.008" radius="0.065" radius-tubular="0.004"
         color="#FFD700" emissive="#FFD700" emissive-intensity="0.95" metalness="0" roughness="1" opacity="0.85"
-        animation="property:rotation;from:0 0 0;to:0 0 360;dur:5000;loop:true;easing:linear">
-      </a-torus>
-      <a-torus position="0.03 -0.22 0.008"
-        radius="0.044" radius-tubular="0.003"
+        animation="property:rotation;from:0 0 0;to:0 0 360;dur:5000;loop:true;easing:linear"></a-torus>
+      <a-torus position="0.03 -0.22 0.008" radius="0.044" radius-tubular="0.003"
         color="#FFA500" emissive="#FFA500" emissive-intensity="0.9" metalness="0" roughness="1" opacity="0.75"
-        animation="property:rotation;from:0 0 360;to:0 0 0;dur:3500;loop:true;easing:linear">
-      </a-torus>
-      <a-circle position="0.03 -0.22 0.003"
-        radius="0.068" rotation="-90 0 0"
+        animation="property:rotation;from:0 0 360;to:0 0 0;dur:3500;loop:true;easing:linear"></a-torus>
+      <a-circle position="0.03 -0.22 0.003" radius="0.068" rotation="-90 0 0"
         color="#FFD700" emissive="#FFD700" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.18"
         material="transparent:true;side:double"
         animation="property:scale;from:0.88 0.88 0.88;to:1.12 1.12 1.12;dur:2500;easing:easeInOutSine;loop:true;dir:alternate">
       </a-circle>
+
+      <!-- ==============================
+           📜 文字面板 — 各自獨立浮動節奏
+           位置根據書頁像素換算到 AR 座標：
+           AR_X = (px_centerX/1329) - 0.5
+           AR_Y = (0.5 - px_centerY/1183) * 0.890
+      ============================== -->
+
+      <!-- 右上：When the stars whisper...
+           像素中心 (1065, 295) → AR (0.30, 0.22) -->
+      <a-image src="#text-tr" width="0.37" height="0.20"
+        position="0.30 0.22 0.038"
+        material="transparent:true;alphaTest:0.08;side:double"
+        animation__float="property:position;from:0.30 0.22 0.038;to:0.30 0.245 0.038;dur:2800;easing:easeInOutSine;loop:true;dir:alternate"
+        animation__sway="property:rotation;from:0 0 -1.5;to:0 0 1.5;dur:4500;easing:easeInOutSine;loop:true;dir:alternate">
+      </a-image>
+
+      <!-- 左下：Chapter 1 / The Town of Floating Stars
+           像素中心 (177, 805) → AR (-0.37, -0.16) -->
+      <a-image src="#text-bl" width="0.24" height="0.22"
+        position="-0.37 -0.16 0.038"
+        material="transparent:true;alphaTest:0.08;side:double"
+        animation__float="property:position;from:-0.37 -0.16 0.038;to:-0.37 -0.135 0.038;dur:3200;easing:easeInOutSine;loop:true;dir:alternate"
+        animation__sway="property:rotation;from:0 0 1.2;to:0 0 -1.2;dur:5000;easing:easeInOutSine;loop:true;dir:alternate">
+      </a-image>
+
+      <!-- 右下：One tiny step leads to a big dream...
+           像素中心 (1070, 1020) → AR (0.30, -0.32) -->
+      <a-image src="#text-br" width="0.36" height="0.21"
+        position="0.30 -0.32 0.038"
+        material="transparent:true;alphaTest:0.08;side:double"
+        animation__float="property:position;from:0.30 -0.32 0.038;to:0.30 -0.295 0.038;dur:3600;easing:easeInOutSine;loop:true;dir:alternate"
+        animation__sway="property:rotation;from:0 0 -1.0;to:0 0 1.0;dur:5500;easing:easeInOutSine;loop:true;dir:alternate">
+      </a-image>
 
       <!-- ⭐ 星星 14 顆 -->
       <a-sphere position="-0.35 0.35 0.06" radius="0.020" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.35 0.35 0.06;to:-0.35 0.375 0.06;dur:1600;easing:easeInOutSine;loop:true;dir:alternate"></a-sphere>
@@ -102,7 +123,7 @@
         <a-sphere position="-0.018 0.006 0.022" radius="0.044" color="#1a1f3a" metalness="0" roughness="1" opacity="0.97"></a-sphere>
       </a-entity>
 
-      <!-- ☁️ 雲朵 3 朵（輕盈版） -->
+      <!-- ☁️ 雲朵 -->
       <a-entity position="-0.30 0.27 0.04" animation="property:position;from:-0.30 0.27 0.04;to:-0.26 0.27 0.04;dur:5000;easing:easeInOutSine;loop:true;dir:alternate">
         <a-sphere position="0 0 0"          radius="0.028" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.55"></a-sphere>
         <a-sphere position="0.026 0.008 0"  radius="0.022" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.50"></a-sphere>
@@ -111,15 +132,13 @@
       <a-entity position="0.06 0.37 0.06" animation="property:position;from:0.06 0.37 0.06;to:0.10 0.37 0.06;dur:6500;easing:easeInOutSine;loop:true;dir:alternate">
         <a-sphere position="0 0 0"          radius="0.025" color="#E8F4FF" emissive="#E8F4FF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.50"></a-sphere>
         <a-sphere position="0.022 0.007 0"  radius="0.020" color="#E8F4FF" emissive="#E8F4FF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.45"></a-sphere>
-        <a-sphere position="-0.018 0.005 0" radius="0.018" color="#E8F4FF" emissive="#E8F4FF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.40"></a-sphere>
       </a-entity>
       <a-entity position="0.34 0.24 0.04" animation="property:position;from:0.34 0.24 0.04;to:0.30 0.24 0.04;dur:5800;easing:easeInOutSine;loop:true;dir:alternate">
         <a-sphere position="0 0 0"          radius="0.026" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.35" metalness="0" roughness="1" opacity="0.48"></a-sphere>
         <a-sphere position="0.024 0.008 0"  radius="0.020" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.35" metalness="0" roughness="1" opacity="0.42"></a-sphere>
-        <a-sphere position="-0.018 0.006 0" radius="0.018" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.35" metalness="0" roughness="1" opacity="0.38"></a-sphere>
       </a-entity>
 
-      <!-- ✨ 光點粒子（JS 生成） -->
+      <!-- ✨ 粒子 -->
       <a-entity id="sparkles-container"></a-entity>
       <a-entity id="yu-particles"></a-entity>
 
@@ -129,8 +148,7 @@
   <script>
     AFRAME.registerComponent('spawn-effects', {
       init: function () {
-
-        // YU 上升光粒（從腳下往上飄散）
+        // YU 上升光粒
         const yuP = document.getElementById('yu-particles');
         for (let i = 0; i < 14; i++) {
           const el    = document.createElement('a-sphere');
@@ -138,26 +156,19 @@
           const rx    = Math.cos(angle) * (0.050 + Math.random() * 0.025);
           const rz    = Math.sin(angle) * (0.050 + Math.random() * 0.025) * 0.4;
           const fromY = -0.22;
-          const toY   = -0.22 + 0.18 + Math.random() * 0.18;
+          const toY   = fromY + 0.18 + Math.random() * 0.18;
           const dur   = 1100 + i * 160;
           const delay = i * 90;
-
           el.setAttribute('position', `${(0.03+rx).toFixed(3)} ${fromY} ${(0.012+rz).toFixed(3)}`);
           el.setAttribute('radius', (0.005 + Math.random() * 0.005).toFixed(4));
-          el.setAttribute('color', '#FFD700');
-          el.setAttribute('emissive', '#FFD700');
-          el.setAttribute('emissive-intensity', '1');
-          el.setAttribute('metalness', '0');
-          el.setAttribute('roughness', '1');
-          el.setAttribute('animation__rise',
-            `property:position; from:${(0.03+rx).toFixed(3)} ${fromY} ${(0.012+rz).toFixed(3)}; to:${(0.03+rx*0.4).toFixed(3)} ${toY.toFixed(3)} ${(0.012+rz*0.3).toFixed(3)}; dur:${dur}; delay:${delay}; easing:easeOutQuad; loop:true`);
-          el.setAttribute('animation__fade',
-            `property:scale; from:1 1 1; to:0.05 0.05 0.05; dur:${dur}; delay:${delay}; easing:easeInQuad; loop:true`);
+          el.setAttribute('color', '#FFD700'); el.setAttribute('emissive', '#FFD700');
+          el.setAttribute('emissive-intensity', '1'); el.setAttribute('metalness', '0'); el.setAttribute('roughness', '1');
+          el.setAttribute('animation__rise', `property:position;from:${(0.03+rx).toFixed(3)} ${fromY} ${(0.012+rz).toFixed(3)};to:${(0.03+rx*0.4).toFixed(3)} ${toY.toFixed(3)} ${(0.012+rz*0.3).toFixed(3)};dur:${dur};delay:${delay};easing:easeOutQuad;loop:true`);
+          el.setAttribute('animation__fade', `property:scale;from:1 1 1;to:0.05 0.05 0.05;dur:${dur};delay:${delay};easing:easeInQuad;loop:true`);
           yuP.appendChild(el);
         }
-
-        // 散景光點（少量，不雜亂）
-        const sc     = document.getElementById('sparkles-container');
+        // 散景光點
+        const sc = document.getElementById('sparkles-container');
         const colors = ['#FFE566','#FFFFFF','#B8E0FF','#FFD6FF','#C0FFE8'];
         for (let i = 0; i < 14; i++) {
           const el    = document.createElement('a-sphere');
@@ -169,24 +180,17 @@
           const delay = Math.random()*3500;
           const color = colors[Math.floor(Math.random()*colors.length)];
           const fs    = (0.2+Math.random()*0.4).toFixed(2);
-
           el.setAttribute('position', `${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
           el.setAttribute('radius', r.toFixed(4));
-          el.setAttribute('color', color);
-          el.setAttribute('emissive', color);
-          el.setAttribute('emissive-intensity', '1');
-          el.setAttribute('metalness', '0');
-          el.setAttribute('roughness', '1');
-          el.setAttribute('animation',
-            `property:scale; from:${fs} ${fs} ${fs}; to:1 1 1; dur:${Math.round(dur)}; delay:${Math.round(delay)}; easing:easeInOutSine; loop:true; dir:alternate`);
+          el.setAttribute('color', color); el.setAttribute('emissive', color);
+          el.setAttribute('emissive-intensity', '1'); el.setAttribute('metalness', '0'); el.setAttribute('roughness', '1');
+          el.setAttribute('animation', `property:scale;from:${fs} ${fs} ${fs};to:1 1 1;dur:${Math.round(dur)};delay:${Math.round(delay)};easing:easeInOutSine;loop:true;dir:alternate`);
           sc.appendChild(el);
         }
       }
     });
-
     document.querySelector('a-scene').setAttribute('spawn-effects', '');
-
-    const hint   = document.getElementById('hint');
+    const hint = document.getElementById('hint');
     const anchor = document.getElementById('book-anchor');
     anchor.addEventListener('targetFound', () => hint.classList.add('hidden'));
     anchor.addEventListener('targetLost',  () => hint.classList.remove('hidden'));
