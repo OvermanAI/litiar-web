@@ -19,80 +19,103 @@
     #hint.hidden { opacity:0; }
     #drag-hint {
       position:fixed; top:60px; left:50%; transform:translateX(-50%);
-      background:rgba(255,200,0,0.85); color:#000;
-      padding:8px 18px; border-radius:999px; font-size:13px; font-weight:600;
+      background:rgba(255,210,0,0.9); color:#000;
+      padding:8px 20px; border-radius:999px; font-size:13px; font-weight:700;
       z-index:9999; pointer-events:none;
       opacity:0; transition:opacity 0.4s ease;
     }
     #drag-hint.show { opacity:1; }
-    .dot { width:8px; height:8px; border-radius:50%; background:#fff; animation:p 1.4s ease-in-out infinite; }
+    .dot { width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.4s ease-in-out infinite; }
     @keyframes p { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
   </style>
 </head>
 <body>
   <div id="hint"><div class="dot"></div>將相機對準 LitiBook 繪本頁面</div>
-  <div id="drag-hint">✋ 拖曳 YU</div>
+  <div id="drag-hint">✋ 可拖曳任何浮動元素</div>
 
   <a-scene
+    drag-system
     mindar-image="imageTargetSrc:./litibook.mind;autoStart:true;uiLoading:yes;uiScanning:yes;uiError:yes;filterMinCF:0.001;filterBeta:10;"
     color-space="sRGB" renderer="colorManagement:true;antialias:true;"
     vr-mode-ui="enabled:false" device-orientation-permission-ui="enabled:false">
 
     <a-assets>
-      <img id="yu-img"   src="./yu.png"                crossorigin="anonymous" />
-      <img id="text-tr"  src="./text_top_right.png"    crossorigin="anonymous" />
-      <img id="text-bl"  src="./text_bottom_left.png"  crossorigin="anonymous" />
-      <img id="text-br"  src="./text_bottom_right.png" crossorigin="anonymous" />
+      <img id="yu-img"  src="./yu.png"                crossorigin="anonymous"/>
+      <img id="text-tr" src="./text_top_right.png"    crossorigin="anonymous"/>
+      <img id="text-bl" src="./text_bottom_left.png"  crossorigin="anonymous"/>
+      <img id="text-br" src="./text_bottom_right.png" crossorigin="anonymous"/>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled:false" fov="80"></a-camera>
 
     <a-entity id="book-anchor" mindar-image-target="targetIndex:0">
 
-      <!-- ==============================
-           🧒 YU 角色 — 可拖曳
-           drag-yu component 處理觸控邏輯
-      ============================== -->
-      <a-image id="yu-char" src="#yu-img"
-        width="0.22" height="0.38"
-        position="0.03 -0.04 0.025"
-        material="transparent:true;alphaTest:0.1;side:double"
-        animation__float="property:position;from:0.03 -0.04 0.025;to:0.03 -0.01 0.025;dur:2200;easing:easeInOutSine;loop:true;dir:alternate"
-        animation__breathe="property:scale;from:1 1 1;to:1.03 1.03 1.03;dur:3000;easing:easeInOutSine;loop:true;dir:alternate"
-        drag-yu>
-      </a-image>
+      <!--
+        ★ 可拖曳元素的結構：
+           <a-entity class="draggable"
+                     data-float-amp="0.03"    ← 浮動幅度（AR 單位）
+                     data-float-dur="2200"    ← 浮動週期（ms）
+                     position="...">
+             [子元素：圖片 / 魔法陣 / 任意內容]
+           </a-entity>
 
-      <!-- YU 腳下魔法陣 (id="yu-ring" 方便跟著 YU 移動) -->
-      <a-entity id="yu-ring" position="0.03 -0.22 0.008">
-        <a-torus radius="0.065" radius-tubular="0.004"
-          color="#FFD700" emissive="#FFD700" emissive-intensity="0.95" metalness="0" roughness="1" opacity="0.85"
-          animation="property:rotation;from:0 0 0;to:0 0 360;dur:5000;loop:true;easing:linear"></a-torus>
-        <a-torus radius="0.044" radius-tubular="0.003"
-          color="#FFA500" emissive="#FFA500" emissive-intensity="0.9" metalness="0" roughness="1" opacity="0.75"
-          animation="property:rotation;from:0 0 360;to:0 0 0;dur:3500;loop:true;easing:linear"></a-torus>
-        <a-circle radius="0.068" rotation="-90 0 0"
-          color="#FFD700" emissive="#FFD700" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.18"
-          material="transparent:true;side:double"
-          animation="property:scale;from:0.88 0.88 0.88;to:1.12 1.12 1.12;dur:2500;easing:easeInOutSine;loop:true;dir:alternate">
-        </a-circle>
+        這樣未來加任何新元素，只要加上 class="draggable"
+        就自動可以拖曳，不需要再寫任何 JS。
+      -->
+
+      <!-- 🧒 YU 角色 -->
+      <a-entity class="draggable"
+                data-float-amp="0.030" data-float-dur="2200"
+                position="0.03 -0.04 0.025">
+        <a-image src="#yu-img" width="0.22" height="0.38"
+          material="transparent:true;alphaTest:0.1;side:double"
+          animation__breathe="property:scale;from:1 1 1;to:1.03 1.03 1.03;dur:3000;easing:easeInOutSine;loop:true;dir:alternate">
+        </a-image>
+        <!-- 魔法陣：作為 YU 的子元素，拖曳時自動跟著移動 -->
+        <a-entity position="0 -0.18 -0.017">
+          <a-torus radius="0.065" radius-tubular="0.004"
+            color="#FFD700" emissive="#FFD700" emissive-intensity="0.95" metalness="0" roughness="1" opacity="0.85"
+            animation="property:rotation;from:0 0 0;to:0 0 360;dur:5000;loop:true;easing:linear"></a-torus>
+          <a-torus radius="0.044" radius-tubular="0.003"
+            color="#FFA500" emissive="#FFA500" emissive-intensity="0.9" metalness="0" roughness="1" opacity="0.75"
+            animation="property:rotation;from:0 0 360;to:0 0 0;dur:3500;loop:true;easing:linear"></a-torus>
+          <a-circle radius="0.068" rotation="-90 0 0"
+            color="#FFD700" emissive="#FFD700" emissive-intensity="0.4" metalness="0" roughness="1" opacity="0.18"
+            material="transparent:true;side:double"
+            animation="property:scale;from:0.88 0.88 0.88;to:1.12 1.12 1.12;dur:2500;easing:easeInOutSine;loop:true;dir:alternate">
+          </a-circle>
+        </a-entity>
       </a-entity>
 
-      <!-- 📜 文字面板 -->
-      <a-image src="#text-tr" width="0.37" height="0.20" position="0.30 0.22 0.038"
-        material="transparent:true;alphaTest:0.08;side:double"
-        animation__float="property:position;from:0.30 0.22 0.038;to:0.30 0.245 0.038;dur:2800;easing:easeInOutSine;loop:true;dir:alternate"
-        animation__sway="property:rotation;from:0 0 -1.5;to:0 0 1.5;dur:4500;easing:easeInOutSine;loop:true;dir:alternate">
-      </a-image>
-      <a-image src="#text-bl" width="0.24" height="0.22" position="-0.37 -0.16 0.038"
-        material="transparent:true;alphaTest:0.08;side:double"
-        animation__float="property:position;from:-0.37 -0.16 0.038;to:-0.37 -0.135 0.038;dur:3200;easing:easeInOutSine;loop:true;dir:alternate"
-        animation__sway="property:rotation;from:0 0 1.2;to:0 0 -1.2;dur:5000;easing:easeInOutSine;loop:true;dir:alternate">
-      </a-image>
-      <a-image src="#text-br" width="0.36" height="0.21" position="0.30 -0.32 0.038"
-        material="transparent:true;alphaTest:0.08;side:double"
-        animation__float="property:position;from:0.30 -0.32 0.038;to:0.30 -0.295 0.038;dur:3600;easing:easeInOutSine;loop:true;dir:alternate"
-        animation__sway="property:rotation;from:0 0 -1.0;to:0 0 1.0;dur:5500;easing:easeInOutSine;loop:true;dir:alternate">
-      </a-image>
+      <!-- 📜 右上文字面板 -->
+      <a-entity class="draggable"
+                data-float-amp="0.025" data-float-dur="2800"
+                position="0.30 0.22 0.038">
+        <a-image src="#text-tr" width="0.37" height="0.20"
+          material="transparent:true;alphaTest:0.08;side:double"
+          animation__sway="property:rotation;from:0 0 -1.5;to:0 0 1.5;dur:4500;easing:easeInOutSine;loop:true;dir:alternate">
+        </a-image>
+      </a-entity>
+
+      <!-- 📜 左下文字面板 -->
+      <a-entity class="draggable"
+                data-float-amp="0.025" data-float-dur="3200"
+                position="-0.37 -0.16 0.038">
+        <a-image src="#text-bl" width="0.24" height="0.22"
+          material="transparent:true;alphaTest:0.08;side:double"
+          animation__sway="property:rotation;from:0 0 1.2;to:0 0 -1.2;dur:5000;easing:easeInOutSine;loop:true;dir:alternate">
+        </a-image>
+      </a-entity>
+
+      <!-- 📜 右下文字面板 -->
+      <a-entity class="draggable"
+                data-float-amp="0.025" data-float-dur="3600"
+                position="0.30 -0.32 0.038">
+        <a-image src="#text-br" width="0.36" height="0.21"
+          material="transparent:true;alphaTest:0.08;side:double"
+          animation__sway="property:rotation;from:0 0 -1.0;to:0 0 1.0;dur:5500;easing:easeInOutSine;loop:true;dir:alternate">
+        </a-image>
+      </a-entity>
 
       <!-- ⭐ 星星 -->
       <a-sphere position="-0.35 0.35 0.06" radius="0.020" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.35 0.35 0.06;to:-0.35 0.375 0.06;dur:1600;easing:easeInOutSine;loop:true;dir:alternate"></a-sphere>
@@ -143,133 +166,95 @@
 
   <script>
     // ============================================================
-    // drag-yu component：讓 YU 可以被手指拖曳
+    //  drag-system：通用拖曳管理器，掛在 <a-scene> 上
+    //
+    //  使用方式：在任何 <a-entity> 加上：
+    //    class="draggable"
+    //    data-float-amp="0.03"   (浮動幅度，AR 單位)
+    //    data-float-dur="2200"   (浮動週期，毫秒)
+    //  → 該元素就自動可以拖曳，放開後恢復漂浮動畫
     // ============================================================
-    AFRAME.registerComponent('drag-yu', {
+    AFRAME.registerComponent('drag-system', {
       init: function () {
-        const yuEl   = this.el;
-        const ringEl = document.getElementById('yu-ring');
-        const scene  = document.querySelector('a-scene');
-        const dragHint = document.getElementById('drag-hint');
+        const scene    = this.el;
+        const SENS     = 0.004;   // 每像素對應的 AR 單位（可調）
+        const HIT_PX   = 115;     // 點擊偵測半徑（螢幕像素）
 
-        let dragging   = false;
-        let startTouchX, startTouchY;
-        let startPosX,  startPosY, startPosZ;
-        let ringOffsetX, ringOffsetY;
+        let active     = null;    // 目前被拖曳的元素
+        let startTX, startTY;
+        let startPX, startPY, startPZ;
 
-        // 每像素對應多少 AR 單位（根據 FOV 與典型觀看距離估算）
-        // 書本寬 ~1 AR 單位，手機螢幕寬 ~390px，書通常佔螢幕 60-80%
-        const SENSITIVITY = 0.004;
-        // 點擊偵測半徑（螢幕像素）
-        const HIT_RADIUS  = 110;
-
-        // ── 取得 YU 在螢幕上的位置 ──────────────────────────
-        const getScreenPos = () => {
-          const camera = scene.camera;
-          const worldPos = new THREE.Vector3();
-          yuEl.object3D.getWorldPosition(worldPos);
-          worldPos.project(camera);
-          const canvas = scene.canvas;
+        // ── 取得元素的螢幕座標 ──────────────────────────────
+        const toScreen = (el) => {
+          const v = new THREE.Vector3();
+          el.object3D.getWorldPosition(v);
+          v.project(scene.camera);
           return {
-            x: (worldPos.x + 1) / 2 * canvas.clientWidth,
-            y: (-worldPos.y + 1) / 2 * canvas.clientHeight
+            x: (v.x + 1) / 2 * scene.canvas.clientWidth,
+            y: (-v.y + 1) / 2 * scene.canvas.clientHeight
           };
         };
 
-        // ── 停止浮動動畫 ────────────────────────────────────
-        const pauseFloat = () => {
-          yuEl.removeAttribute('animation__float');
-          yuEl.removeAttribute('animation__breathe');
-          // 放大一點給使用者「抓住了」的回饋
-          yuEl.setAttribute('animation__grab', {
-            property: 'scale', from: '1 1 1', to: '1.08 1.08 1.08',
-            dur: 200, easing: 'easeOutQuad'
+        // ── 停止浮動動畫 ─────────────────────────────────────
+        const pause = (el) => {
+          el.removeAttribute('animation__float');
+          // 小放大給「抓住」的觸感回饋
+          el.setAttribute('animation__grab', {
+            property:'scale', from:'1 1 1', to:'1.06 1.06 1.06',
+            dur:180, easing:'easeOutQuad'
           });
         };
 
-        // ── 恢復浮動動畫（以目前位置為基準）──────────────────
-        const resumeFloat = () => {
-          yuEl.removeAttribute('animation__grab');
-          const p = yuEl.getAttribute('position');
-          yuEl.setAttribute('animation__float', {
+        // ── 放開後重新啟動漂浮，以當前位置為基準 ─────────────
+        const resume = (el) => {
+          el.removeAttribute('animation__grab');
+          const p   = el.getAttribute('position');
+          const amp = parseFloat(el.dataset.floatAmp || 0.025);
+          const dur = parseInt(el.dataset.floatDur   || 2500);
+          el.setAttribute('animation__float', {
             property: 'position',
             from: `${p.x} ${p.y} ${p.z}`,
-            to:   `${p.x} ${p.y + 0.03} ${p.z}`,
-            dur: 2200, easing: 'easeInOutSine', loop: true, dir: 'alternate'
-          });
-          yuEl.setAttribute('animation__breathe', {
-            property: 'scale',
-            from: '1 1 1', to: '1.03 1.03 1.03',
-            dur: 3000, easing: 'easeInOutSine', loop: true, dir: 'alternate'
+            to:   `${p.x} ${p.y + amp} ${p.z}`,
+            dur, easing:'easeInOutSine', loop:true, dir:'alternate'
           });
         };
 
-        // ── touchstart ──────────────────────────────────────
+        // ── touchstart：找最近的 draggable ──────────────────
         scene.canvas.addEventListener('touchstart', (e) => {
-          const touch = e.touches[0];
-          const sp = getScreenPos();
-          const dist = Math.hypot(touch.clientX - sp.x, touch.clientY - sp.y);
+          const t = e.touches[0];
+          let best = null, bestD = HIT_PX;
 
-          if (dist > HIT_RADIUS) return; // 沒點到 YU
-
-          dragging    = true;
-          startTouchX = touch.clientX;
-          startTouchY = touch.clientY;
-
-          const yuPos   = yuEl.getAttribute('position');
-          startPosX = yuPos.x;
-          startPosY = yuPos.y;
-          startPosZ = yuPos.z;
-
-          // 記錄魔法陣和 YU 的位移差
-          const ringPos = ringEl.getAttribute('position');
-          ringOffsetX = ringPos.x - yuPos.x;
-          ringOffsetY = ringPos.y - yuPos.y;
-
-          pauseFloat();
-          dragHint.classList.add('show');
-          e.preventDefault();
-        }, { passive: false });
-
-        // ── touchmove ───────────────────────────────────────
-        scene.canvas.addEventListener('touchmove', (e) => {
-          if (!dragging) return;
-          const touch = e.touches[0];
-
-          const dx = (touch.clientX - startTouchX) * SENSITIVITY;
-          const dy = -(touch.clientY - startTouchY) * SENSITIVITY; // Y 軸反向
-
-          const newX = startPosX + dx;
-          const newY = startPosY + dy;
-
-          // 移動 YU
-          yuEl.setAttribute('position', { x: newX, y: newY, z: startPosZ });
-
-          // 魔法陣跟著 YU 移動
-          ringEl.setAttribute('position', {
-            x: newX + ringOffsetX,
-            y: newY + ringOffsetY,
-            z: ringEl.getAttribute('position').z
+          document.querySelectorAll('.draggable').forEach(el => {
+            const sp = toScreen(el);
+            const d  = Math.hypot(t.clientX - sp.x, t.clientY - sp.y);
+            if (d < bestD) { bestD = d; best = el; }
           });
 
+          if (!best) return;
+          active = best;
+          startTX = t.clientX; startTY = t.clientY;
+          const p = active.getAttribute('position');
+          startPX = p.x; startPY = p.y; startPZ = p.z;
+          pause(active);
           e.preventDefault();
-        }, { passive: false });
+        }, { passive:false });
 
-        // ── touchend ────────────────────────────────────────
-        const onTouchEnd = () => {
-          if (!dragging) return;
-          dragging = false;
-          dragHint.classList.remove('show');
-          resumeFloat();
-        };
-        scene.canvas.addEventListener('touchend',    onTouchEnd);
-        scene.canvas.addEventListener('touchcancel', onTouchEnd);
+        // ── touchmove：移動 active 元素 ─────────────────────
+        scene.canvas.addEventListener('touchmove', (e) => {
+          if (!active) return;
+          const t = e.touches[0];
+          active.setAttribute('position', {
+            x: startPX + (t.clientX - startTX) * SENS,
+            y: startPY - (t.clientY - startTY) * SENS,
+            z: startPZ
+          });
+          e.preventDefault();
+        }, { passive:false });
 
-        // 偵測到書本時顯示拖曳提示 3 秒
-        document.getElementById('book-anchor').addEventListener('targetFound', () => {
-          dragHint.classList.add('show');
-          setTimeout(() => dragHint.classList.remove('show'), 3000);
-        });
+        // ── touchend / cancel：放開 ──────────────────────────
+        const onEnd = () => { if (active) { resume(active); active = null; } };
+        scene.canvas.addEventListener('touchend',    onEnd);
+        scene.canvas.addEventListener('touchcancel', onEnd);
       }
     });
 
@@ -278,42 +263,61 @@
       init: function () {
         const yuP = document.getElementById('yu-particles');
         for (let i = 0; i < 14; i++) {
-          const el    = document.createElement('a-sphere');
-          const angle = (i / 14) * Math.PI * 2;
-          const rx    = Math.cos(angle) * (0.050 + Math.random() * 0.025);
-          const rz    = Math.sin(angle) * (0.050 + Math.random() * 0.025) * 0.4;
-          const fromY = -0.22, toY = fromY + 0.18 + Math.random() * 0.18;
-          const dur   = 1100 + i * 160, delay = i * 90;
-          el.setAttribute('position', `${(0.03+rx).toFixed(3)} ${fromY} ${(0.012+rz).toFixed(3)}`);
-          el.setAttribute('radius', (0.005 + Math.random() * 0.005).toFixed(4));
-          el.setAttribute('color', '#FFD700'); el.setAttribute('emissive', '#FFD700');
-          el.setAttribute('emissive-intensity', '1'); el.setAttribute('metalness', '0'); el.setAttribute('roughness', '1');
-          el.setAttribute('animation__rise', `property:position;from:${(0.03+rx).toFixed(3)} ${fromY} ${(0.012+rz).toFixed(3)};to:${(0.03+rx*0.4).toFixed(3)} ${toY.toFixed(3)} ${(0.012+rz*0.3).toFixed(3)};dur:${dur};delay:${delay};easing:easeOutQuad;loop:true`);
-          el.setAttribute('animation__fade', `property:scale;from:1 1 1;to:0.05 0.05 0.05;dur:${dur};delay:${delay};easing:easeInQuad;loop:true`);
+          const el  = document.createElement('a-sphere');
+          const ang = (i/14)*Math.PI*2;
+          const rx  = Math.cos(ang)*(0.05+Math.random()*0.025);
+          const rz  = Math.sin(ang)*(0.05+Math.random()*0.025)*0.4;
+          const fy  = -0.22, ty = fy+0.18+Math.random()*0.18;
+          const dur = 1100+i*160, delay = i*90;
+          el.setAttribute('position',`${(0.03+rx).toFixed(3)} ${fy} ${(0.012+rz).toFixed(3)}`);
+          el.setAttribute('radius',(0.005+Math.random()*0.005).toFixed(4));
+          el.setAttribute('color','#FFD700'); el.setAttribute('emissive','#FFD700');
+          el.setAttribute('emissive-intensity','1'); el.setAttribute('metalness','0'); el.setAttribute('roughness','1');
+          el.setAttribute('animation__rise',`property:position;from:${(0.03+rx).toFixed(3)} ${fy} ${(0.012+rz).toFixed(3)};to:${(0.03+rx*0.4).toFixed(3)} ${ty.toFixed(3)} ${(0.012+rz*0.3).toFixed(3)};dur:${dur};delay:${delay};easing:easeOutQuad;loop:true`);
+          el.setAttribute('animation__fade',`property:scale;from:1 1 1;to:0.05 0.05 0.05;dur:${dur};delay:${delay};easing:easeInQuad;loop:true`);
           yuP.appendChild(el);
         }
         const sc = document.getElementById('sparkles-container');
         const colors = ['#FFE566','#FFFFFF','#B8E0FF','#FFD6FF','#C0FFE8'];
         for (let i = 0; i < 14; i++) {
-          const el    = document.createElement('a-sphere');
-          const x = (Math.random()-0.5)*0.86, y = (Math.random()-0.5)*0.76, z = 0.03+Math.random()*0.06;
-          const r = 0.006+Math.random()*0.007, dur = 900+Math.random()*1400, delay = Math.random()*3500;
-          const color = colors[Math.floor(Math.random()*colors.length)], fs = (0.2+Math.random()*0.4).toFixed(2);
-          el.setAttribute('position', `${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
-          el.setAttribute('radius', r.toFixed(4));
-          el.setAttribute('color', color); el.setAttribute('emissive', color);
-          el.setAttribute('emissive-intensity', '1'); el.setAttribute('metalness', '0'); el.setAttribute('roughness', '1');
-          el.setAttribute('animation', `property:scale;from:${fs} ${fs} ${fs};to:1 1 1;dur:${Math.round(dur)};delay:${Math.round(delay)};easing:easeInOutSine;loop:true;dir:alternate`);
+          const el  = document.createElement('a-sphere');
+          const x   = (Math.random()-0.5)*0.86, y=(Math.random()-0.5)*0.76, z=0.03+Math.random()*0.06;
+          const r   = 0.006+Math.random()*0.007, dur=900+Math.random()*1400, delay=Math.random()*3500;
+          const col = colors[Math.floor(Math.random()*colors.length)], fs=(0.2+Math.random()*0.4).toFixed(2);
+          el.setAttribute('position',`${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
+          el.setAttribute('radius',r.toFixed(4));
+          el.setAttribute('color',col); el.setAttribute('emissive',col);
+          el.setAttribute('emissive-intensity','1'); el.setAttribute('metalness','0'); el.setAttribute('roughness','1');
+          el.setAttribute('animation',`property:scale;from:${fs} ${fs} ${fs};to:1 1 1;dur:${Math.round(dur)};delay:${Math.round(delay)};easing:easeInOutSine;loop:true;dir:alternate`);
           sc.appendChild(el);
         }
+
+        // 啟動每個 draggable 的初始漂浮動畫
+        document.querySelectorAll('.draggable').forEach(el => {
+          const p   = el.getAttribute('position');
+          const amp = parseFloat(el.dataset.floatAmp || 0.025);
+          const dur = parseInt(el.dataset.floatDur   || 2500);
+          el.setAttribute('animation__float', {
+            property:'position',
+            from:`${p.x} ${p.y} ${p.z}`,
+            to:`${p.x} ${p.y+amp} ${p.z}`,
+            dur, easing:'easeInOutSine', loop:true, dir:'alternate'
+          });
+        });
       }
     });
 
-    document.querySelector('a-scene').setAttribute('spawn-effects', '');
-    const hint = document.getElementById('hint');
+    document.querySelector('a-scene').setAttribute('spawn-effects','');
+
+    const hint   = document.getElementById('hint');
+    const dHint  = document.getElementById('drag-hint');
     const anchor = document.getElementById('book-anchor');
-    anchor.addEventListener('targetFound', () => hint.classList.add('hidden'));
-    anchor.addEventListener('targetLost',  () => hint.classList.remove('hidden'));
+    anchor.addEventListener('targetFound', () => {
+      hint.classList.add('hidden');
+      dHint.classList.add('show');
+      setTimeout(() => dHint.classList.remove('show'), 3000);
+    });
+    anchor.addEventListener('targetLost', () => hint.classList.remove('hidden'));
   </script>
 </body>
 </html>
