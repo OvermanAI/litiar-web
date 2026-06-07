@@ -3,293 +3,131 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>LitiAR — 繪本活起來了</title>
-
-  <!-- A-Frame 3D 引擎 -->
+  <title>LitiAR</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <!-- MindAR 圖片追蹤 -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; overflow: hidden; font-family: -apple-system, sans-serif; }
-
-    /* 掃描提示 UI */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#000; overflow:hidden; font-family:-apple-system,sans-serif; }
     #hint {
-      position: fixed;
-      bottom: 48px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 999px;
-      font-size: 15px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      z-index: 9999;
-      pointer-events: none;
-      transition: opacity 0.6s ease;
+      position:fixed; bottom:48px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,0.55); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      color:#fff; padding:12px 24px; border-radius:999px; font-size:15px; font-weight:500;
+      display:flex; align-items:center; gap:8px; z-index:9999; pointer-events:none;
+      transition:opacity 0.6s ease;
     }
-    #hint.hidden { opacity: 0; }
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #fff;
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.7); }
-    }
-
-    /* 書本偵測到時的光暈效果 */
-    #detected-flash {
-      position: fixed; inset: 0;
-      background: radial-gradient(circle, rgba(255,220,100,0.3) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 9998;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-    #detected-flash.show { opacity: 1; }
+    #hint.hidden { opacity:0; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#fff; animation:p 1.4s ease-in-out infinite; }
+    @keyframes p { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
   </style>
 </head>
 <body>
+  <div id="hint"><div class="dot"></div>將相機對準 LitiBook 繪本頁面</div>
 
-  <!-- 掃描提示 -->
-  <div id="hint">
-    <div class="dot"></div>
-    將相機對準 LitiBook 繪本頁面
-  </div>
-
-  <!-- 偵測到的光暈 -->
-  <div id="detected-flash"></div>
-
-  <!-- AR 場景 -->
   <a-scene
-    mindar-image="imageTargetSrc: ./litibook.mind; autoStart: true; uiLoading: yes; uiScanning: yes; uiError: yes; filterMinCF: 0.001; filterBeta: 10;"
-    color-space="sRGB"
-    renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    mindar-image="imageTargetSrc:./litibook.mind;autoStart:true;uiLoading:yes;uiScanning:yes;uiError:yes;filterMinCF:0.001;filterBeta:10;"
+    color-space="sRGB" renderer="colorManagement:true;antialias:true;"
+    vr-mode-ui="enabled:false" device-orientation-permission-ui="enabled:false">
 
-    <!-- 相機 -->
-    <a-camera position="0 0 0" look-controls="enabled: false" fov="80"></a-camera>
+    <a-camera position="0 0 0" look-controls="enabled:false" fov="80"></a-camera>
 
-    <!-- 所有 AR 效果都固定在這個錨點上（會自動跟著書頁移動） -->
-    <a-entity id="book-anchor" mindar-image-target="targetIndex: 0">
+    <a-entity id="book-anchor" mindar-image-target="targetIndex:0">
 
-      <!--
-        座標說明（圖片 1329×1183，比例 1.1234）：
-        X: -0.5（左緣）→ 0.5（右緣）
-        Y: -0.445（底部）→ 0.445（頂部）
-        Z: 0（書頁表面）→ 正值（朝向觀看者浮起）
-      -->
+      <!-- STARS: emissive self-glowing, no metalness -->
+      <a-sphere position="-0.35 0.35 0.08" radius="0.022" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.35 0.35 0.08;to:-0.35 0.38 0.08;dur:1600;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFE200" opacity="0.13" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="-0.18 0.40 0.10" radius="0.018" color="#FFF4A0" emissive="#FFF4A0" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.18 0.40 0.10;to:-0.18 0.43 0.10;dur:2100;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFF4A0" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="-0.42 0.22 0.07" radius="0.016" color="#FFD700" emissive="#FFD700" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.42 0.22 0.07;to:-0.42 0.245 0.07;dur:1900;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFD700" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.02 0.42 0.12"  radius="0.024" color="#FFFACD" emissive="#FFFACD" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.02 0.42 0.12;to:0.02 0.45 0.12;dur:1400;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFFACD" opacity="0.13" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.10 0.36 0.09"  radius="0.016" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.10 0.36 0.09;to:0.10 0.39 0.09;dur:2300;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFE200" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="-0.08 0.30 0.11" radius="0.019" color="#FFF4A0" emissive="#FFF4A0" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.08 0.30 0.11;to:-0.08 0.33 0.11;dur:1750;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFF4A0" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.30 0.40 0.10"  radius="0.020" color="#FFEAA7" emissive="#FFEAA7" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.30 0.40 0.10;to:0.30 0.43 0.10;dur:2000;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFEAA7" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.42 0.30 0.08"  radius="0.015" color="#FFD700" emissive="#FFD700" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.42 0.30 0.08;to:0.42 0.33 0.08;dur:1500;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFD700" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.38 0.12 0.07"  radius="0.017" color="#FFF4A0" emissive="#FFF4A0" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.38 0.12 0.07;to:0.38 0.15 0.07;dur:2200;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFF4A0" opacity="0.11" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="-0.28 0.14 0.09" radius="0.013" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.28 0.14 0.09;to:-0.28 0.17 0.09;dur:1300;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFE200" opacity="0.09" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.22 0.22 0.06"  radius="0.014" color="#FFFACD" emissive="#FFFACD" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.22 0.22 0.06;to:0.22 0.25 0.06;dur:1850;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFFACD" opacity="0.09" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="-0.10 0.20 0.10" radius="0.012" color="#FFD700" emissive="#FFD700" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.10 0.20 0.10;to:-0.10 0.23 0.10;dur:2400;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFD700" opacity="0.09" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="0.15 0.44 0.13"  radius="0.021" color="#FFEAA7" emissive="#FFEAA7" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:0.15 0.44 0.13;to:0.15 0.47 0.13;dur:1650;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFEAA7" opacity="0.13" material="side:back"></a-sphere></a-sphere>
+      <a-sphere position="-0.45 0.38 0.06" radius="0.013" color="#FFE200" emissive="#FFE200" emissive-intensity="1" metalness="0" roughness="1" animation="property:position;from:-0.45 0.38 0.06;to:-0.45 0.41 0.06;dur:2000;easing:easeInOutSine;loop:true;dir:alternate"><a-sphere radius="1.8" color="#FFE200" opacity="0.09" material="side:back"></a-sphere></a-sphere>
 
-      <!-- ==============================
-           🌟 星星群（14顆，散佈上半部）
-      ============================== -->
-
-      <!-- 左上星群 -->
-      <a-sphere position="-0.35 0.35 0.08" radius="0.018" color="#FFE566" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.35 0.35 0.08; to: -0.35 0.38 0.08; dur: 1600; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="-0.18 0.40 0.10" radius="0.014" color="#FFF4A0" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.18 0.40 0.10; to: -0.18 0.43 0.10; dur: 2100; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="-0.42 0.20 0.07" radius="0.012" color="#FFD700" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.42 0.20 0.07; to: -0.42 0.225 0.07; dur: 1900; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <!-- 中上星群 -->
-      <a-sphere position="0.02 0.42 0.12" radius="0.020" color="#FFFACD" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.02 0.42 0.12; to: 0.02 0.44 0.12; dur: 1400; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="0.10 0.36 0.09" radius="0.013" color="#FFE566" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.10 0.36 0.09; to: 0.10 0.385 0.09; dur: 2300; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="-0.08 0.30 0.11" radius="0.015" color="#FFF4A0" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.08 0.30 0.11; to: -0.08 0.325 0.11; dur: 1750; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <!-- 右上星群 -->
-      <a-sphere position="0.30 0.40 0.10" radius="0.016" color="#FFEAA7" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.30 0.40 0.10; to: 0.30 0.425 0.10; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="0.42 0.30 0.08" radius="0.012" color="#FFD700" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.42 0.30 0.08; to: 0.42 0.325 0.08; dur: 1500; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="0.38 0.10 0.07" radius="0.014" color="#FFF4A0" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.38 0.10 0.07; to: 0.38 0.125 0.07; dur: 2200; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <!-- 散落小星星 -->
-      <a-sphere position="-0.28 0.12 0.09" radius="0.010" color="#FFE566" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.28 0.12 0.09; to: -0.28 0.14 0.09; dur: 1300; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="0.22 0.20 0.06" radius="0.011" color="#FFFACD" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.22 0.20 0.06; to: 0.22 0.225 0.06; dur: 1850; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="-0.10 0.18 0.10" radius="0.009" color="#FFD700" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.10 0.18 0.10; to: -0.10 0.205 0.10; dur: 2400; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="0.15 0.44 0.13" radius="0.017" color="#FFEAA7" metalness="0.9" roughness="0.05"
-        animation="property: position; from: 0.15 0.44 0.13; to: 0.15 0.46 0.13; dur: 1650; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <a-sphere position="-0.45 0.38 0.06" radius="0.010" color="#FFE566" metalness="0.9" roughness="0.05"
-        animation="property: position; from: -0.45 0.38 0.06; to: -0.45 0.40 0.06; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-
-      <!-- ==============================
-           🌙 月亮（右上方）
-      ============================== -->
+      <!-- MOON -->
       <a-entity position="0.22 0.32 0.10"
-        animation__float="property: position; from: 0.22 0.32 0.10; to: 0.22 0.34 0.10; dur: 3500; easing: easeInOutSine; loop: true; dir: alternate"
-        animation__spin="property: rotation; from: 0 0 0; to: 0 360 0; dur: 18000; loop: true; easing: linear">
-        <!-- 主體 -->
-        <a-sphere radius="0.048" color="#FFF3B0" metalness="0.15" roughness="0.55"
-          emissive="#FFD700" emissive-intensity="0.15"></a-sphere>
-        <!-- 新月陰影（稍偏左，製造月牙感） -->
-        <a-sphere position="-0.022 0.008 0.022" radius="0.042" color="#0D0D2B" opacity="0.92"></a-sphere>
+        animation__float="property:position;from:0.22 0.32 0.10;to:0.22 0.35 0.10;dur:3500;easing:easeInOutSine;loop:true;dir:alternate"
+        animation__rock="property:rotation;from:0 0 -5;to:0 0 5;dur:6000;easing:easeInOutSine;loop:true;dir:alternate">
+        <a-sphere radius="0.055" color="#FFFDE0" emissive="#FFFDE0" emissive-intensity="0.9" metalness="0" roughness="1">
+          <a-sphere radius="1.4" color="#FFF8C0" opacity="0.16" material="side:back"></a-sphere>
+        </a-sphere>
+        <a-sphere position="-0.025 0.01 0.028" radius="0.048" color="#0D1530" emissive="#0D1530" emissive-intensity="0" metalness="0" roughness="1" opacity="0.95"></a-sphere>
       </a-entity>
 
-      <!-- ==============================
-           ☁️ 雲朵（4 朵）
-      ============================== -->
-
-      <!-- 雲朵 1 — 左上 -->
-      <a-entity position="-0.32 0.28 0.07"
-        animation="property: position; from: -0.32 0.28 0.07; to: -0.28 0.28 0.07; dur: 4000; easing: easeInOutSine; loop: true; dir: alternate">
-        <a-sphere position="0 0 0"      radius="0.040" color="#FFFFFF" opacity="0.72" roughness="1"></a-sphere>
-        <a-sphere position="0.038 0.01 0" radius="0.032" color="#FFFFFF" opacity="0.72" roughness="1"></a-sphere>
-        <a-sphere position="-0.030 0.01 0" radius="0.030" color="#FFFFFF" opacity="0.72" roughness="1"></a-sphere>
-        <a-sphere position="0.015 0.025 0" radius="0.025" color="#FFFFFF" opacity="0.72" roughness="1"></a-sphere>
+      <!-- CLOUDS -->
+      <a-entity position="-0.32 0.28 0.07" animation="property:position;from:-0.32 0.28 0.07;to:-0.28 0.28 0.07;dur:4000;easing:easeInOutSine;loop:true;dir:alternate">
+        <a-sphere position="0 0 0"         radius="0.042" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.80"></a-sphere>
+        <a-sphere position="0.040 0.01 0"  radius="0.034" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.75"></a-sphere>
+        <a-sphere position="-0.032 0.01 0" radius="0.031" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.70"></a-sphere>
+        <a-sphere position="0.016 0.026 0" radius="0.026" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.70"></a-sphere>
+      </a-entity>
+      <a-entity position="0.05 0.38 0.09" animation="property:position;from:0.05 0.38 0.09;to:0.09 0.38 0.09;dur:5200;easing:easeInOutSine;loop:true;dir:alternate">
+        <a-sphere position="0 0 0"          radius="0.037" color="#EEF6FF" emissive="#EEF6FF" emissive-intensity="0.25" metalness="0" roughness="1" opacity="0.72"></a-sphere>
+        <a-sphere position="0.034 0.008 0"  radius="0.029" color="#EEF6FF" emissive="#EEF6FF" emissive-intensity="0.25" metalness="0" roughness="1" opacity="0.68"></a-sphere>
+        <a-sphere position="-0.029 0.006 0" radius="0.027" color="#EEF6FF" emissive="#EEF6FF" emissive-intensity="0.25" metalness="0" roughness="1" opacity="0.65"></a-sphere>
+      </a-entity>
+      <a-entity position="0.35 0.25 0.06" animation="property:position;from:0.35 0.25 0.06;to:0.31 0.25 0.06;dur:4800;easing:easeInOutSine;loop:true;dir:alternate">
+        <a-sphere position="0 0 0"         radius="0.040" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.68"></a-sphere>
+        <a-sphere position="0.036 0.01 0"  radius="0.032" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.62"></a-sphere>
+        <a-sphere position="-0.028 0.01 0" radius="0.029" color="#FFFFFF" emissive="#FFFFFF" emissive-intensity="0.3" metalness="0" roughness="1" opacity="0.60"></a-sphere>
+      </a-entity>
+      <a-entity position="-0.40 0.10 0.08" animation="property:position;from:-0.40 0.10 0.08;to:-0.36 0.10 0.08;dur:6000;easing:easeInOutSine;loop:true;dir:alternate">
+        <a-sphere position="0 0 0"           radius="0.034" color="#F0F8FF" emissive="#F0F8FF" emissive-intensity="0.2" metalness="0" roughness="1" opacity="0.62"></a-sphere>
+        <a-sphere position="0.030 0.008 0"   radius="0.026" color="#F0F8FF" emissive="#F0F8FF" emissive-intensity="0.2" metalness="0" roughness="1" opacity="0.58"></a-sphere>
+        <a-sphere position="-0.024 0.006 0"  radius="0.024" color="#F0F8FF" emissive="#F0F8FF" emissive-intensity="0.2" metalness="0" roughness="1" opacity="0.55"></a-sphere>
       </a-entity>
 
-      <!-- 雲朵 2 — 中上 -->
-      <a-entity position="0.05 0.38 0.09"
-        animation="property: position; from: 0.05 0.38 0.09; to: 0.09 0.38 0.09; dur: 5200; easing: easeInOutSine; loop: true; dir: alternate">
-        <a-sphere position="0 0 0"       radius="0.035" color="#E8F4FF" opacity="0.65" roughness="1"></a-sphere>
-        <a-sphere position="0.032 0.008 0" radius="0.028" color="#E8F4FF" opacity="0.65" roughness="1"></a-sphere>
-        <a-sphere position="-0.028 0.006 0" radius="0.026" color="#E8F4FF" opacity="0.65" roughness="1"></a-sphere>
-        <a-sphere position="0.010 0.022 0" radius="0.022" color="#E8F4FF" opacity="0.65" roughness="1"></a-sphere>
+      <!-- YU GLOW RING -->
+      <a-entity position="0.04 -0.02 0.05" animation="property:position;from:0.04 -0.02 0.05;to:0.04 0.01 0.05;dur:2800;easing:easeInOutSine;loop:true;dir:alternate">
+        <a-sphere position=" 0.040 0 0"      radius="0.012" color="#FFB800" emissive="#FFB800" emissive-intensity="1" metalness="0" roughness="1" animation="property:scale;from:0.6 0.6 0.6;to:1.1 1.1 1.1;dur:900;easing:easeInOutSine;loop:true;dir:alternate"></a-sphere>
+        <a-sphere position="-0.040 0 0"      radius="0.012" color="#FFB800" emissive="#FFB800" emissive-intensity="1" metalness="0" roughness="1" animation="property:scale;from:0.6 0.6 0.6;to:1.1 1.1 1.1;dur:1100;easing:easeInOutSine;loop:true;dir:alternate;delay:150"></a-sphere>
+        <a-sphere position=" 0.020 0  0.035" radius="0.011" color="#FFA500" emissive="#FFA500" emissive-intensity="1" metalness="0" roughness="1" animation="property:scale;from:0.6 0.6 0.6;to:1.1 1.1 1.1;dur:950;easing:easeInOutSine;loop:true;dir:alternate;delay:300"></a-sphere>
+        <a-sphere position="-0.020 0  0.035" radius="0.011" color="#FFA500" emissive="#FFA500" emissive-intensity="1" metalness="0" roughness="1" animation="property:scale;from:0.6 0.6 0.6;to:1.1 1.1 1.1;dur:1050;easing:easeInOutSine;loop:true;dir:alternate;delay:450"></a-sphere>
+        <a-sphere position=" 0.020 0 -0.035" radius="0.011" color="#FFB800" emissive="#FFB800" emissive-intensity="1" metalness="0" roughness="1" animation="property:scale;from:0.6 0.6 0.6;to:1.1 1.1 1.1;dur:850;easing:easeInOutSine;loop:true;dir:alternate;delay:200"></a-sphere>
+        <a-sphere position="-0.020 0 -0.035" radius="0.011" color="#FFB800" emissive="#FFB800" emissive-intensity="1" metalness="0" roughness="1" animation="property:scale;from:0.6 0.6 0.6;to:1.1 1.1 1.1;dur:1200;easing:easeInOutSine;loop:true;dir:alternate;delay:600"></a-sphere>
       </a-entity>
 
-      <!-- 雲朵 3 — 右上 -->
-      <a-entity position="0.35 0.25 0.06"
-        animation="property: position; from: 0.35 0.25 0.06; to: 0.31 0.25 0.06; dur: 4800; easing: easeInOutSine; loop: true; dir: alternate">
-        <a-sphere position="0 0 0"       radius="0.038" color="#FFFFFF" opacity="0.60" roughness="1"></a-sphere>
-        <a-sphere position="0.034 0.01 0" radius="0.030" color="#FFFFFF" opacity="0.60" roughness="1"></a-sphere>
-        <a-sphere position="-0.026 0.01 0" radius="0.028" color="#FFFFFF" opacity="0.60" roughness="1"></a-sphere>
-      </a-entity>
-
-      <!-- 雲朵 4 — 左中 -->
-      <a-entity position="-0.40 0.10 0.08"
-        animation="property: position; from: -0.40 0.10 0.08; to: -0.36 0.10 0.08; dur: 6000; easing: easeInOutSine; loop: true; dir: alternate">
-        <a-sphere position="0 0 0"       radius="0.032" color="#F0F8FF" opacity="0.55" roughness="1"></a-sphere>
-        <a-sphere position="0.028 0.008 0" radius="0.025" color="#F0F8FF" opacity="0.55" roughness="1"></a-sphere>
-        <a-sphere position="-0.022 0.006 0" radius="0.023" color="#F0F8FF" opacity="0.55" roughness="1"></a-sphere>
-      </a-entity>
-
-      <!-- ==============================
-           💛 YU 角色光環（畫面中央）
-      ============================== -->
-      <a-entity id="yu-glow" position="0.04 -0.02 0.05"
-        animation="property: position; from: 0.04 -0.02 0.05; to: 0.04 0.0 0.05; dur: 2800; easing: easeInOutSine; loop: true; dir: alternate">
-        <!-- 腳下光圈（6 顆金點環繞） -->
-        <a-sphere position=" 0.040  0 0"     radius="0.010" color="#FFD700" metalness="1" roughness="0" emissive="#FF8C00" emissive-intensity="0.5"
-          animation="property: scale; from: 0.6 0.6 0.6; to: 1 1 1; dur: 900; easing: easeInOutSine; loop: true; dir: alternate"></a-sphere>
-        <a-sphere position="-0.040  0 0"     radius="0.010" color="#FFD700" metalness="1" roughness="0" emissive="#FF8C00" emissive-intensity="0.5"
-          animation="property: scale; from: 0.6 0.6 0.6; to: 1 1 1; dur: 1100; easing: easeInOutSine; loop: true; dir: alternate; delay: 150"></a-sphere>
-        <a-sphere position=" 0.020  0 0.035" radius="0.009" color="#FFA500" metalness="1" roughness="0" emissive="#FF8C00" emissive-intensity="0.5"
-          animation="property: scale; from: 0.6 0.6 0.6; to: 1 1 1; dur: 950; easing: easeInOutSine; loop: true; dir: alternate; delay: 300"></a-sphere>
-        <a-sphere position="-0.020  0 0.035" radius="0.009" color="#FFA500" metalness="1" roughness="0" emissive="#FF8C00" emissive-intensity="0.5"
-          animation="property: scale; from: 0.6 0.6 0.6; to: 1 1 1; dur: 1050; easing: easeInOutSine; loop: true; dir: alternate; delay: 450"></a-sphere>
-        <a-sphere position=" 0.020  0 -0.035" radius="0.009" color="#FFD700" metalness="1" roughness="0" emissive="#FF8C00" emissive-intensity="0.5"
-          animation="property: scale; from: 0.6 0.6 0.6; to: 1 1 1; dur: 850; easing: easeInOutSine; loop: true; dir: alternate; delay: 200"></a-sphere>
-        <a-sphere position="-0.020  0 -0.035" radius="0.009" color="#FFD700" metalness="1" roughness="0" emissive="#FF8C00" emissive-intensity="0.5"
-          animation="property: scale; from: 0.6 0.6 0.6; to: 1 1 1; dur: 1200; easing: easeInOutSine; loop: true; dir: alternate; delay: 600"></a-sphere>
-      </a-entity>
-
-      <!-- ==============================
-           ✨ 光點粒子（由 JS 動態生成）
-      ============================== -->
       <a-entity id="sparkles-container"></a-entity>
-
-      <!-- ==============================
-           💡 環境暖光（增加整體立體感）
-      ============================== -->
-      <a-light type="point" color="#FFE8B0" intensity="0.8" position="0 0.2 0.3" distance="2" decay="2"></a-light>
-      <a-light type="ambient" color="#B0C8FF" intensity="0.3"></a-light>
-
-    </a-entity><!-- end book-anchor -->
-
+    </a-entity>
   </a-scene>
 
   <script>
-    // ============================================================
-    // 動態生成光點粒子
-    // ============================================================
     AFRAME.registerComponent('spawn-sparkles', {
       init: function () {
         const container = document.getElementById('sparkles-container');
-        const count = 28;
-        const colors = ['#B0E0FF', '#D0F0FF', '#FFEEDD', '#FFD6FF', '#C0FFE0', '#FFFACD'];
-
-        for (let i = 0; i < count; i++) {
-          const el = document.createElement('a-sphere');
-
-          const x = (Math.random() - 0.5) * 0.90;
-          const y = (Math.random() - 0.5) * 0.80;
-          const z = 0.02 + Math.random() * 0.09;
-          const r = 0.006 + Math.random() * 0.010;
-          const dur = 700 + Math.random() * 1800;
-          const delay = Math.random() * 2500;
-          const color = colors[Math.floor(Math.random() * colors.length)];
-          const fromScale = (0.2 + Math.random() * 0.4).toFixed(2);
-
-          el.setAttribute('position', `${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
-          el.setAttribute('radius', r.toFixed(4));
-          el.setAttribute('color', color);
-          el.setAttribute('metalness', '0.95');
-          el.setAttribute('roughness', '0');
-          el.setAttribute('animation', [
-            `property: scale;`,
-            `from: ${fromScale} ${fromScale} ${fromScale};`,
-            `to: 1 1 1;`,
-            `dur: ${Math.round(dur)};`,
-            `delay: ${Math.round(delay)};`,
-            `easing: easeInOutSine;`,
-            `loop: true;`,
-            `dir: alternate`
-          ].join(' '));
-
+        const colors = ['#FFE566','#FFFFFF','#B8E0FF','#FFD6FF','#C0FFE8','#FFC0A0'];
+        for (let i = 0; i < 30; i++) {
+          const el    = document.createElement('a-sphere');
+          const x     = (Math.random()-0.5)*0.92;
+          const y     = (Math.random()-0.5)*0.82;
+          const z     = 0.02+Math.random()*0.10;
+          const r     = 0.007+Math.random()*0.009;
+          const dur   = 600+Math.random()*1600;
+          const delay = Math.random()*3000;
+          const color = colors[Math.floor(Math.random()*colors.length)];
+          const fromS = (0.2+Math.random()*0.5).toFixed(2);
+          el.setAttribute('position',`${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
+          el.setAttribute('radius',r.toFixed(4));
+          el.setAttribute('color',color);
+          el.setAttribute('emissive',color);
+          el.setAttribute('emissive-intensity','1');
+          el.setAttribute('metalness','0');
+          el.setAttribute('roughness','1');
+          el.setAttribute('animation',`property:scale;from:${fromS} ${fromS} ${fromS};to:1 1 1;dur:${Math.round(dur)};delay:${Math.round(delay)};easing:easeInOutSine;loop:true;dir:alternate`);
           container.appendChild(el);
         }
       }
     });
-
-    // 套用粒子生成器
-    document.querySelector('a-scene').setAttribute('spawn-sparkles', '');
-
-    // ============================================================
-    // 偵測到書本時的 UI 回饋
-    // ============================================================
-    const hint = document.getElementById('hint');
-    const flash = document.getElementById('detected-flash');
-    const anchor = document.getElementById('book-anchor');
-
-    anchor.addEventListener('targetFound', () => {
-      hint.classList.add('hidden');
-      flash.classList.add('show');
-      setTimeout(() => flash.classList.remove('show'), 800);
-    });
-
-    anchor.addEventListener('targetLost', () => {
-      hint.classList.remove('hidden');
-    });
+    document.querySelector('a-scene').setAttribute('spawn-sparkles','');
+    const hint=document.getElementById('hint');
+    const anchor=document.getElementById('book-anchor');
+    anchor.addEventListener('targetFound',()=>hint.classList.add('hidden'));
+    anchor.addEventListener('targetLost',()=>hint.classList.remove('hidden'));
   </script>
-
 </body>
 </html>
