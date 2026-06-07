@@ -27,11 +27,91 @@
     #drag-hint.show { opacity:1; }
     .dot { width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.4s ease-in-out infinite; }
     @keyframes p { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+    /* 閱讀按鈕 */
+    #read-btn {
+      position: fixed;
+      bottom: 48px;
+      right: 24px;
+      z-index: 9999;
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #3a2000;
+      border: none;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255,165,0,0.5);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease, transform 0.15s ease;
+    }
+    #read-btn.visible { opacity: 1; pointer-events: auto; }
+    #read-btn:active  { transform: scale(0.94); }
+    #read-btn.reading {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(238,90,36,0.5);
+    }
+
+    /* 聲波動畫（閱讀中顯示） */
+    .sound-bars { display:flex; align-items:center; gap:2px; height:16px; }
+    .sound-bars span {
+      display:block; width:3px; background:currentColor; border-radius:2px;
+      animation:bar 0.8s ease-in-out infinite;
+    }
+    .sound-bars span:nth-child(1){height:6px;  animation-delay:0s}
+    .sound-bars span:nth-child(2){height:12px; animation-delay:0.15s}
+    .sound-bars span:nth-child(3){height:16px; animation-delay:0.3s}
+    .sound-bars span:nth-child(4){height:10px; animation-delay:0.45s}
+    .sound-bars span:nth-child(5){height:6px;  animation-delay:0.6s}
+    @keyframes bar {
+      0%,100%{transform:scaleY(0.4)} 50%{transform:scaleY(1)}
+    }
+
+    /* 字幕條 */
+    #subtitle {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 88vw;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #FFF8DC;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #subtitle.show { opacity: 1; }
   </style>
 </head>
 <body>
   <div id="hint"><div class="dot"></div>將相機對準 LitiBook 繪本頁面</div>
   <div id="drag-hint">✋ 可拖曳任何浮動元素</div>
+
+  <!-- 閱讀按鈕 -->
+  <button id="read-btn" aria-label="朗讀本頁英文">
+    <span id="btn-icon">🔊</span>
+    <span id="btn-label">閱讀</span>
+  </button>
+
+  <!-- 字幕 -->
+  <div id="subtitle"></div>
 
   <a-scene
     drag-system
@@ -315,10 +395,89 @@
     anchor.addEventListener('targetFound', () => {
       hint.classList.add('hidden');
       dHint.classList.add('show');
+      readBtn.classList.add('visible');
       setTimeout(() => dHint.classList.remove('show'), 3000);
     });
-    anchor.addEventListener('targetLost', () => hint.classList.remove('hidden'));
+    anchor.addEventListener('targetLost', () => {
+      hint.classList.remove('hidden');
+    });
+
+    // ============================================================
+    //  🔊 閱讀功能 — Web Speech API
+    //  逐句朗讀並顯示字幕
+    // ============================================================
+    const readBtn  = document.getElementById('read-btn');
+    const btnIcon  = document.getElementById('btn-icon');
+    const btnLabel = document.getElementById('btn-label');
+    const subtitle = document.getElementById('subtitle');
+
+    // 本頁英文內容（按照書頁順序）
+    const sentences = [
+      { text: "The Wonder Adventures of Yu.",                                label: "The Wonder Adventures of Yu." },
+      { text: "Welcome to Yu's World.",                                       label: "Welcome to Yu's World." },
+      { text: "Chapter One. The Town of Floating Stars.",                     label: "Chapter 1 · The Town of Floating Stars" },
+      { text: "Yu lives in a town where stars float gently in the sky.",      label: "Yu lives in a town where stars float gently in the sky." },
+      { text: "She loves to wander and discover new things.",                 label: "She loves to wander and discover new things." },
+      { text: "When the stars whisper at night, a little adventure begins.",  label: "When the stars whisper at night, a little adventure begins." },
+      { text: "One tiny step leads to a big dream.",                          label: "One tiny step leads to a big dream." },
+      { text: "Let's go, Yu! The world is waiting just for you.",             label: "Let's go, Yu! The world is waiting just for you." },
+    ];
+
+    let isReading  = false;
+    let currentIdx = 0;
+
+    const showSubtitle = (text) => { subtitle.textContent = text; subtitle.classList.add('show'); };
+    const hideSubtitle = () => subtitle.classList.remove('show');
+
+    const setReadingState = (reading) => {
+      isReading = reading;
+      if (reading) {
+        readBtn.classList.add('reading');
+        btnIcon.innerHTML = '<span class="sound-bars"><span></span><span></span><span></span><span></span><span></span></span>';
+        btnLabel.textContent = '停止';
+      } else {
+        readBtn.classList.remove('reading');
+        btnIcon.textContent = '🔊';
+        btnLabel.textContent = '閱讀';
+        hideSubtitle();
+        currentIdx = 0;
+      }
+    };
+
+    const readNext = () => {
+      if (!isReading || currentIdx >= sentences.length) { setReadingState(false); return; }
+      const s   = sentences[currentIdx++];
+      const utt = new SpeechSynthesisUtterance(s.text);
+      utt.lang  = 'en-US';
+      utt.rate  = 0.82;
+      utt.pitch = 1.05;
+      const voices   = speechSynthesis.getVoices();
+      const enVoice  = voices.find(v => v.lang.startsWith('en-US') && /female|samantha|karen/i.test(v.name))
+                    || voices.find(v => v.lang.startsWith('en')) || null;
+      if (enVoice) utt.voice = enVoice;
+      showSubtitle(s.label);
+      utt.onend  = readNext;
+      utt.onerror = () => setReadingState(false);
+      speechSynthesis.speak(utt);
+    };
+
+    readBtn.addEventListener('click', () => {
+      if (isReading) {
+        speechSynthesis.cancel();
+        setReadingState(false);
+      } else {
+        speechSynthesis.cancel();
+        currentIdx = 0;
+        setReadingState(true);
+        setTimeout(readNext, 120); // iOS 需要短暫 delay
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && isReading) { speechSynthesis.cancel(); setReadingState(false); }
+    });
   </script>
 </body>
 </html>
+
 
