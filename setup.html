@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>LitiAR — 設定浮動元素</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { background:#0f0c1a; color:#fff; font-family:-apple-system,sans-serif; min-height:100vh; }
+
+    /* ── 頂部 ── */
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px; background:rgba(255,255,255,0.05);
+      border-bottom:1px solid rgba(255,255,255,0.1);
+    }
+    .topbar h1 { font-size:18px; font-weight:700; background:linear-gradient(90deg,#FFD700,#FFA500); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .topbar .step-label { font-size:12px; color:rgba(255,255,255,0.5); }
+
+    /* ── 步驟指示 ── */
+    .steps { display:flex; gap:8px; padding:16px 20px; }
+    .step {
+      flex:1; padding:8px; border-radius:8px; text-align:center;
+      font-size:12px; font-weight:600;
+      background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.4);
+      transition:all 0.3s;
+    }
+    .step.active { background:rgba(255,215,0,0.15); color:#FFD700; border:1px solid rgba(255,215,0,0.4); }
+    .step.done   { background:rgba(80,200,80,0.12); color:#5fc75f; }
+
+    /* ── 上傳區 ── */
+    #upload-area {
+      margin:24px 20px;
+      border:2px dashed rgba(255,215,0,0.35);
+      border-radius:16px; padding:48px 24px;
+      text-align:center; cursor:pointer;
+      transition:border-color 0.2s;
+    }
+    #upload-area:active { border-color:#FFD700; }
+    #upload-area .icon { font-size:48px; margin-bottom:12px; }
+    #upload-area p { color:rgba(255,255,255,0.6); font-size:15px; line-height:1.5; }
+    #upload-area strong { color:#FFD700; }
+    #file-input { display:none; }
+
+    /* ── 畫布區 ── */
+    #canvas-section { display:none; padding:0 20px 16px; }
+    #canvas-wrap {
+      position:relative; border-radius:12px; overflow:hidden;
+      box-shadow:0 4px 24px rgba(0,0,0,0.6);
+      touch-action:none;
+    }
+    #main-canvas { display:block; width:100%; cursor:crosshair; }
+
+    /* 圈選提示層 */
+    #selection-overlay {
+      position:absolute; inset:0; pointer-events:none;
+    }
+
+    /* ── 工具列 ── */
+    #toolbar {
+      display:flex; gap:10px; padding:14px 20px; align-items:center;
+    }
+    .tool-btn {
+      flex:1; padding:12px 8px; border:none; border-radius:12px;
+      font-size:14px; font-weight:600; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      transition:transform 0.15s, opacity 0.15s;
+    }
+    .tool-btn:active { transform:scale(0.94); }
+    .tool-btn.primary  { background:linear-gradient(135deg,#FFD700,#FFA500); color:#3a2000; }
+    .tool-btn.secondary{ background:rgba(255,255,255,0.1); color:#fff; }
+    .tool-btn.danger   { background:rgba(255,80,80,0.2); color:#ff6b6b; }
+    .tool-btn:disabled { opacity:0.35; pointer-events:none; }
+
+    /* ── 圈選狀態提示 ── */
+    #select-hint {
+      margin:0 20px 12px;
+      background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3);
+      border-radius:10px; padding:10px 14px;
+      font-size:13px; color:#FFD700; display:none;
+      align-items:center; gap:8px;
+    }
+    #select-hint.show { display:flex; }
+
+    /* ── 已選元素清單 ── */
+    #elements-section { padding:0 20px; display:none; }
+    #elements-section h2 { font-size:14px; color:rgba(255,255,255,0.6); margin-bottom:10px; }
+    #elements-list { display:flex; flex-direction:column; gap:8px; }
+    .element-item {
+      display:flex; align-items:center; gap:12px;
+      background:rgba(255,255,255,0.06); border-radius:10px; padding:10px;
+    }
+    .element-item img { width:60px; height:45px; object-fit:contain; border-radius:6px; background:repeating-conic-gradient(#aaa 0% 25%, #fff 0% 50%) 0 0/10px 10px; }
+    .element-item .info { flex:1; }
+    .element-item .info span { font-size:13px; color:rgba(255,255,255,0.7); }
+    .element-item .remove-btn { background:rgba(255,80,80,0.2); border:none; color:#ff6b6b; border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; }
+
+    /* ── 底部 CTA ── */
+    #cta-section { padding:20px; display:none; }
+    #start-ar-btn {
+      width:100%; padding:18px; border:none; border-radius:14px;
+      background:linear-gradient(135deg,#FFD700,#FFA500);
+      color:#3a2000; font-size:17px; font-weight:800;
+      cursor:pointer; box-shadow:0 4px 24px rgba(255,165,0,0.4);
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      transition:transform 0.15s;
+    }
+    #start-ar-btn:active { transform:scale(0.97); }
+
+    /* ── 預覽 modal ── */
+    #preview-modal {
+      display:none; position:fixed; inset:0; z-index:100;
+      background:rgba(0,0,0,0.85); backdrop-filter:blur(8px);
+      flex-direction:column; align-items:center; justify-content:center; padding:24px;
+    }
+    #preview-modal.show { display:flex; }
+    #preview-modal h3 { font-size:17px; margin-bottom:16px; color:#FFD700; }
+    #preview-img {
+      max-width:100%; max-height:50vh; object-fit:contain; border-radius:10px;
+      background:repeating-conic-gradient(#555 0% 25%, #333 0% 50%) 0 0/14px 14px;
+    }
+    #preview-modal p { margin-top:12px; font-size:13px; color:rgba(255,255,255,0.6); text-align:center; }
+    .modal-actions { display:flex; gap:12px; margin-top:20px; width:100%; }
+    .modal-actions button { flex:1; padding:14px; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; }
+    #preview-keep   { background:linear-gradient(135deg,#FFD700,#FFA500); color:#3a2000; }
+    #preview-redo   { background:rgba(255,255,255,0.1); color:#fff; }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部 -->
+  <div class="topbar">
+    <h1>✨ LitiAR 設定</h1>
+    <span class="step-label" id="step-label">步驟 1 / 3</span>
+  </div>
+
+  <!-- 步驟指示 -->
+  <div class="steps">
+    <div class="step active" id="s1">① 上傳書頁</div>
+    <div class="step" id="s2">② 圈選元素</div>
+    <div class="step" id="s3">③ 開始 AR</div>
+  </div>
+
+  <!-- 步驟 1：上傳 -->
+  <div id="upload-area">
+    <div class="icon">📖</div>
+    <p>點擊上傳書頁照片<br><strong>或用相機拍攝</strong></p>
+    <input type="file" id="file-input" accept="image/*" capture="environment" />
+  </div>
+
+  <!-- 步驟 2：圈選 -->
+  <div id="canvas-section">
+    <div id="select-hint" class="show">
+      ✏️ 用手指在圖片上畫出想要浮動的元素
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="main-canvas"></canvas>
+      <canvas id="selection-overlay"></canvas>
+    </div>
+  </div>
+
+  <!-- 工具列 -->
+  <div id="toolbar" style="display:none;">
+    <button class="tool-btn secondary" id="undo-btn" disabled>↩ 重畫</button>
+    <button class="tool-btn primary"   id="done-btn" disabled>✂️ 裁切</button>
+    <button class="tool-btn danger"    id="clear-btn">🗑 清除全部</button>
+  </div>
+
+  <!-- 已選元素清單 -->
+  <div id="elements-section">
+    <h2>已選取的浮動元素</h2>
+    <div id="elements-list"></div>
+  </div>
+
+  <!-- 開始 AR 按鈕 -->
+  <div id="cta-section">
+    <button id="start-ar-btn">
+      🔮 開始 AR 體驗
+    </button>
+  </div>
+
+  <!-- 預覽 Modal -->
+  <div id="preview-modal">
+    <h3>📸 裁切預覽</h3>
+    <img id="preview-img" src="" alt="預覽" />
+    <p>這個元素在 AR 中會浮動在書頁上方</p>
+    <div class="modal-actions">
+      <button id="preview-redo">重新圈選</button>
+      <button id="preview-keep">✅ 加入</button>
+    </div>
+  </div>
+
+  <script>
+  // ═══════════════════════════════════════════════════════════
+  //  LitiAR Setup — 圈選工具
+  // ═══════════════════════════════════════════════════════════
+
+  const fileInput     = document.getElementById('file-input');
+  const uploadArea    = document.getElementById('upload-area');
+  const canvasSection = document.getElementById('canvas-section');
+  const toolbar       = document.getElementById('toolbar');
+  const selectHint    = document.getElementById('select-hint');
+  const elementsSection = document.getElementById('elements-section');
+  const elementsList  = document.getElementById('elements-list');
+  const ctaSection    = document.getElementById('cta-section');
+  const mainCanvas    = document.getElementById('main-canvas');
+  const overlayCanvas = document.getElementById('selection-overlay');
+  const mCtx          = mainCanvas.getContext('2d');
+  const oCtx          = overlayCanvas.getContext('2d');
+  const doneBtn       = document.getElementById('done-btn');
+  const undoBtn       = document.getElementById('undo-btn');
+  const clearBtn      = document.getElementById('clear-btn');
+  const previewModal  = document.getElementById('preview-modal');
+  const previewImg    = document.getElementById('preview-img');
+  const previewKeep   = document.getElementById('preview-keep');
+  const previewRedo   = document.getElementById('preview-redo');
+
+  let uploadedImage   = null;   // HTMLImageElement
+  let imageNatW       = 0;
+  let imageNatH       = 0;
+  let lassoPath       = [];     // [{x,y}] in image coordinates
+  let isDrawing       = false;
+  let elements        = [];     // { dataURL, normX, normY, normW, normH }
+  let pendingDataURL  = null;
+  let pendingMeta     = null;
+
+  // ── 步驟更新 ──────────────────────────────────────────────
+  const setStep = (n) => {
+    ['s1','s2','s3'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.className = 'step' + (i+1 < n ? ' done' : i+1 === n ? ' active' : '');
+    });
+    document.getElementById('step-label').textContent = `步驟 ${n} / 3`;
+  };
+
+  // ── 上傳圖片 ──────────────────────────────────────────────
+  uploadArea.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadImage(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  const loadImage = (src) => {
+    const img = new Image();
+    img.onload = () => {
+      uploadedImage = img;
+      imageNatW = img.naturalWidth;
+      imageNatH = img.naturalHeight;
+
+      // 設定 canvas 尺寸（保持比例）
+      const displayW = mainCanvas.parentElement.clientWidth;
+      const displayH = Math.round(displayW * imageNatH / imageNatW);
+      mainCanvas.width    = imageNatW;
+      mainCanvas.height   = imageNatH;
+      mainCanvas.style.width  = displayW + 'px';
+      mainCanvas.style.height = displayH + 'px';
+      overlayCanvas.width  = imageNatW;
+      overlayCanvas.height = imageNatH;
+      overlayCanvas.style.width  = displayW + 'px';
+      overlayCanvas.style.height = displayH + 'px';
+      overlayCanvas.style.position = 'absolute';
+      overlayCanvas.style.top  = '0';
+      overlayCanvas.style.left = '0';
+
+      mCtx.drawImage(img, 0, 0);
+
+      // 顯示步驟 2
+      uploadArea.style.display = 'none';
+      canvasSection.style.display = 'block';
+      toolbar.style.display = 'flex';
+      setStep(2);
+    };
+    img.src = src;
+  };
+
+  // ── Lasso 選取（觸控） ────────────────────────────────────
+  const getPos = (touch) => {
+    const rect = overlayCanvas.getBoundingClientRect();
+    const scaleX = imageNatW / rect.width;
+    const scaleY = imageNatH / rect.height;
+    return {
+      x: (touch.clientX - rect.left)  * scaleX,
+      y: (touch.clientY - rect.top)   * scaleY,
+    };
+  };
+
+  overlayCanvas.addEventListener('touchstart', (e) => {
+    lassoPath = [getPos(e.touches[0])];
+    isDrawing = true;
+    doneBtn.disabled = true;
+    e.preventDefault();
+  }, { passive:false });
+
+  overlayCanvas.addEventListener('touchmove', (e) => {
+    if (!isDrawing) return;
+    lassoPath.push(getPos(e.touches[0]));
+    drawLasso();
+    e.preventDefault();
+  }, { passive:false });
+
+  overlayCanvas.addEventListener('touchend', (e) => {
+    if (!isDrawing || lassoPath.length < 8) return;
+    isDrawing = false;
+    drawLasso(true);  // 閉合
+    doneBtn.disabled  = false;
+    undoBtn.disabled  = false;
+    selectHint.classList.remove('show');
+    e.preventDefault();
+  }, { passive:false });
+
+  // ── 繪製 Lasso 路徑 ──────────────────────────────────────
+  const drawLasso = (close = false) => {
+    oCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+    // 半透明遮罩背景
+    oCtx.fillStyle = 'rgba(0,0,0,0.45)';
+    oCtx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+    // 圈選路徑（清除遮罩讓選取區域透明）
+    oCtx.save();
+    oCtx.globalCompositeOperation = 'destination-out';
+    oCtx.beginPath();
+    oCtx.moveTo(lassoPath[0].x, lassoPath[0].y);
+    lassoPath.forEach(p => oCtx.lineTo(p.x, p.y));
+    if (close) oCtx.closePath();
+    oCtx.fill();
+    oCtx.restore();
+
+    // 描邊（讓選取邊界清晰）
+    oCtx.strokeStyle = '#FFD700';
+    oCtx.lineWidth   = 3;
+    oCtx.lineJoin    = 'round';
+    oCtx.lineCap     = 'round';
+    oCtx.setLineDash([8, 4]);
+    oCtx.beginPath();
+    oCtx.moveTo(lassoPath[0].x, lassoPath[0].y);
+    lassoPath.forEach(p => oCtx.lineTo(p.x, p.y));
+    if (close) oCtx.closePath();
+    oCtx.stroke();
+  };
+
+  // ── 裁切按鈕 ─────────────────────────────────────────────
+  doneBtn.addEventListener('click', () => {
+    if (lassoPath.length < 3) return;
+
+    // 計算邊界框
+    const xs = lassoPath.map(p => p.x);
+    const ys = lassoPath.map(p => p.y);
+    const x0 = Math.max(0, Math.floor(Math.min(...xs)));
+    const y0 = Math.max(0, Math.floor(Math.min(...ys)));
+    const x1 = Math.min(imageNatW, Math.ceil(Math.max(...xs)));
+    const y1 = Math.min(imageNatH, Math.ceil(Math.max(...ys)));
+    const cw = x1 - x0;
+    const ch = y1 - y0;
+
+    // 建立裁切 canvas
+    const crop = document.createElement('canvas');
+    crop.width  = cw;
+    crop.height = ch;
+    const cCtx  = crop.getContext('2d');
+
+    // Lasso 遮罩（轉換到裁切座標）
+    cCtx.beginPath();
+    cCtx.moveTo(lassoPath[0].x - x0, lassoPath[0].y - y0);
+    lassoPath.forEach(p => cCtx.lineTo(p.x - x0, p.y - y0));
+    cCtx.closePath();
+    cCtx.clip();
+
+    // 貼上原圖
+    cCtx.drawImage(uploadedImage, -x0, -y0);
+
+    const dataURL = crop.toDataURL('image/png');
+
+    // 儲存正規化座標（用於 AR 定位）
+    pendingDataURL = dataURL;
+    pendingMeta = {
+      normCenterX: (x0 + cw / 2) / imageNatW,
+      normCenterY: (y0 + ch / 2) / imageNatH,
+      normW: cw / imageNatW,
+      normH: ch / imageNatH,
+    };
+
+    // 顯示預覽
+    previewImg.src = dataURL;
+    previewModal.classList.add('show');
+  });
+
+  // ── 預覽：保留 ───────────────────────────────────────────
+  previewKeep.addEventListener('click', () => {
+    elements.push({ dataURL: pendingDataURL, ...pendingMeta });
+    previewModal.classList.remove('show');
+    oCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    lassoPath = [];
+    doneBtn.disabled = true;
+    undoBtn.disabled = true;
+    selectHint.classList.add('show');
+    renderElementsList();
+    pendingDataURL = null;
+    pendingMeta    = null;
+  });
+
+  // ── 預覽：重選 ───────────────────────────────────────────
+  previewRedo.addEventListener('click', () => {
+    previewModal.classList.remove('show');
+    oCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    lassoPath = [];
+    doneBtn.disabled = true;
+    selectHint.classList.add('show');
+  });
+
+  // ── 重畫 ─────────────────────────────────────────────────
+  undoBtn.addEventListener('click', () => {
+    oCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    lassoPath = [];
+    doneBtn.disabled = true;
+    undoBtn.disabled = true;
+    selectHint.classList.add('show');
+  });
+
+  // ── 清除全部 ─────────────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    if (!elements.length) return;
+    if (!confirm('確定清除所有已選元素？')) return;
+    elements = [];
+    renderElementsList();
+  });
+
+  // ── 渲染元素清單 ─────────────────────────────────────────
+  const renderElementsList = () => {
+    elementsList.innerHTML = '';
+    if (elements.length === 0) {
+      elementsSection.style.display = 'none';
+      ctaSection.style.display = 'none';
+      return;
+    }
+    elementsSection.style.display = 'block';
+    ctaSection.style.display = 'block';
+    setStep(3);
+    elements.forEach((el, i) => {
+      const div = document.createElement('div');
+      div.className = 'element-item';
+      div.innerHTML = `
+        <img src="${el.dataURL}" />
+        <div class="info"><span>浮動元素 ${i+1}</span></div>
+        <button class="remove-btn" data-i="${i}">✕ 移除</button>
+      `;
+      div.querySelector('.remove-btn').addEventListener('click', () => {
+        elements.splice(i, 1);
+        renderElementsList();
+      });
+      elementsList.appendChild(div);
+    });
+  };
+
+  // ── 開始 AR ──────────────────────────────────────────────
+  document.getElementById('start-ar-btn').addEventListener('click', () => {
+    // 計算圖片的長寬比（AR 座標需要）
+    const aspectRatio = imageNatH / imageNatW;
+
+    // 轉換正規化座標 → AR 座標
+    const arElements = elements.map(el => ({
+      dataURL:  el.dataURL,
+      // MindAR 座標：X 範圍 -0.5~0.5，Y 範圍 -(ar/2)~(ar/2)
+      arX:  el.normCenterX - 0.5,
+      arY:  (0.5 - el.normCenterY) * aspectRatio,
+      arW:  el.normW,
+      arH:  el.normH * aspectRatio,
+    }));
+
+    // 存入 localStorage
+    localStorage.setItem('litiar_elements', JSON.stringify(arElements));
+    localStorage.setItem('litiar_image_src', uploadedImage.src.substring(0,100000));
+
+    // 導向 AR 頁面
+    window.location.href = './index.html';
+  });
+
+  // ── 初始化：讀取已存在的元素 ────────────────────────────
+  const saved = localStorage.getItem('litiar_elements');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.length) {
+        // 顯示提示
+        const restore = confirm(`發現上次的 ${parsed.length} 個元素，是否還原？`);
+        if (restore) {
+          elements = parsed.map(e => ({
+            dataURL: e.dataURL,
+            normCenterX: 0, normCenterY: 0, normW: e.arW, normH: e.arH
+          }));
+          renderElementsList();
+        }
+      }
+    } catch(e) {}
+  }
+  </script>
+
+</body>
+</html>
